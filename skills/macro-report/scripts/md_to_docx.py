@@ -38,7 +38,7 @@ def find_path(p):
         q = os.path.normpath(os.path.join(base, p))
         if os.path.exists(q): return q
     return ""
-chrome = os.environ.get("CHROME_PATH") or "/Users/chenyonghong/Library/Caches/ms-playwright/chromium-1223/chrome-mac-arm64/Google Chrome for Testing.app/Contents/MacOS/Google Chrome for Testing"
+chrome = os.environ.get("CHROME_PATH") or os.path.expanduser("~/Library/Caches/ms-playwright/chromium-1223/chrome-mac-arm64/Google Chrome for Testing.app/Contents/MacOS/Google Chrome for Testing")
 def svg_png(svg):
     if not os.path.exists(chrome): return ""
     out = tempfile.mktemp(suffix=".png")

@@ -55,7 +55,7 @@ def run_chart(kind, csv_path, out_svg, title, source, x="日期", y="数值"):
     if r.returncode != 0 or not os.path.exists(out_svg):
         print("chart failed", title, r.stderr[:300], file=sys.stderr); return ""
     return out_svg
-chrome = os.environ.get("CHROME_PATH") or "/Users/chenyonghong/Library/Caches/ms-playwright/chromium-1223/chrome-mac-arm64/Google Chrome for Testing.app/Contents/MacOS/Google Chrome for Testing"
+chrome = os.environ.get("CHROME_PATH") or os.path.expanduser("~/Library/Caches/ms-playwright/chromium-1223/chrome-mac-arm64/Google Chrome for Testing.app/Contents/MacOS/Google Chrome for Testing")
 def svg_png(svg):
     out = tempfile.mktemp(suffix=".png")
     try:

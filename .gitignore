@@ -65,6 +65,7 @@ skills/hithink-finance/
 skills/lieflat-less-ai-tone/
 skills/office-xlsx/
 skills-lock.json
+skills/.skills_store_lock.json
 
 # ---- 本地设计报告（不上传，只留本地）----
 边界智能投研Agent设计报告.docx
