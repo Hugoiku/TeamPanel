@@ -66,6 +66,15 @@ skills/lieflat-less-ai-tone/
 skills/office-xlsx/
 skills-lock.json
 
+# ---- 本地设计报告（不上传，只留本地）----
+边界智能投研Agent设计报告.docx
+scripts/generate_design_report.py
+
+# ---- Python 缓存 ----
+__pycache__/
+*.pyc
+*.pyo
+
 # ---- 依赖 / 生成物 / 系统文件 ----
 node_modules/
 runtime/py/
