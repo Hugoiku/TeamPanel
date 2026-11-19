@@ -5712,6 +5712,10 @@ button.primary{background:#2563eb;border-color:#2563eb;color:#fff}
                  !((liveWork || []).length && (liveWork || []).every(function (w) { return w.state === "done"; }))) {
         msg = "研究计划已批准，待启动执行";
         act = "run-plans"; label = "启动执行";
+      } else if (arr[0] && !arr[0].finalExists && work.length &&
+                 work.filter(function (w) { return w.kind !== "child"; }).every(function (w) { return w.state === "done"; })) {
+        msg = "初稿已完成，待生成最终报告";
+        act = "final-report"; label = "生成报告";
       } else if (arr[0] && arr[0].finalExists && !issues.length && !activeN && !pendingN) {
         el.style.display = "none"; return;
       } else if (st.some(function (x) { return x.status === "running"; })) {
@@ -5835,6 +5839,10 @@ button.primary{background:#2563eb;border-color:#2563eb;color:#fff}
           '<option value="mixed">综合报告</option><option value="auto">行业自适应</option><option value="industry">行业报告</option><option value="stock">个股报告</option><option value="macro">宏观报告</option></select></div>';
         if (j && j.synth && j.synth.status === "failed") {
           h += '<div style="display:flex;justify-content:flex-end;margin-top:4px"><button class="skbtn" data-final-synth-retry="1" style="padding:0 6px;font-size:9px">重试跨报告综合</button></div>';
+        }
+        if (!(j && j.finalExists)) {
+          h += '<div style="display:flex;justify-content:flex-end;gap:6px;margin-top:6px">' +
+            '<button class="primary" data-final-report="1" style="padding:2px 8px;font-size:9.5px">生成最终报告</button></div>';
         }
         setHTML(el, h || '<div class="empty">暂无流水线状态</div>');
         fetch(API + "/api/report/profile?case=" + encodeURIComponent(CASE_ID)).then(function (r) { return r.json(); }).then(function (pj) {
@@ -7916,7 +7924,12 @@ button.primary{background:#2563eb;border-color:#2563eb;color:#fff}
         preflightAndStartPlans(pls2, "已启动");
         return;
       }
-      if (ns === "run-resume") {
+      if (ns === "final-report") {
+      var fr = document.querySelector("[data-final-report]");
+      if (fr) fr.click();
+      return;
+    }
+    if (ns === "run-resume") {
         fetch(API + "/api/work?case=" + encodeURIComponent(CASE_ID)).then(function (r) { return r.json(); })
           .then(function (wj) {
             var failed = ((wj && wj.items) || []).filter(function (w) { return w.state === "failed" || w.state === "cancelled"; });

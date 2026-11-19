@@ -49,6 +49,21 @@ const st = read("stock.json");
 const dcf = (st.valuation || {}).dcf || {};
 const sens = dcf.terminal_margin_sensitivity || {};
 if (Object.keys(sens).length) chart("stock-dcf-sensitivity", "DCF 对终值 FCF 利润率的敏感性（元/股）", Object.keys(sens).map(k => [k.replace("pct", "%"), Number(sens[k])]), ["S4","S53"]);
+// 通用回退：如果结构化 JSON 没有命中行业模板，使用 vault/<case>/figures 下已有 SVG，
+// 避免“底稿有图但最终报告无图”被 readability gate 误杀。
+if (!items.length) {
+  const figDir = path.join(base, "figures");
+  try {
+    const all = fs.readdirSync(figDir).filter(f => /\.svg$/i.test(f)).sort();
+    // 优先选择与投研结论直接相关的图，最多 8 张，避免报告被图表淹没。
+    const preferred = all.filter(f => /(nim|npl|roe|pb|dividend|scenario|coverage|revenue|credit|rate)/i.test(f));
+    const chosen = preferred.concat(all.filter(f => preferred.indexOf(f) < 0)).slice(0, 8);
+    chosen.forEach(f => {
+      const name = f.replace(/^fig-/, "").replace(/\.svg$/i, "").replace(/[-_]/g, " ");
+      items.push({ path: "figures/" + f, title: name, source: "existing-figure", sources: [], placement: "figures" });
+    });
+  } catch (e) {}
+}
 const out = { ok: true, case: CASE, items, generatedAt: new Date().toISOString() };
 fs.writeFileSync(path.join(base, "research", "exhibits.json"), JSON.stringify(out, null, 2));
 console.log(JSON.stringify({ ok: true, items: items.length }));
