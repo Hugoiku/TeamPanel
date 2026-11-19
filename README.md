@@ -58,15 +58,24 @@ evidence/sources.jsonl 证据 S# / snapshot / sha256
 runtime/ledger/        append-only 事件账本
 ~~~
 
+## 使用前提
+
+| 类别 | 要求 | 说明 |
+|---|---|---|
+| 操作系统 | macOS / Linux / Windows | 核心 Broker 与面板只依赖 Node；Windows 用 start.cmd |
+| Node.js | ≥ 18，推荐 22 LTS | 必需；无需数据库、Redis 或其他服务 |
+| Agent 运行时 | DeepSeek Harness（dsh CLI） | 员工真正执行研究时需要；没有 dsh 只能浏览面板、账本与已有产物 |
+| 模型 | OpenAI 兼容网关或 dsh 支持的 provider | 默认配置引用 opencode-go/deepseek-v4.1-flash，需要自行配置并替换 |
+| 模型凭据 | 自己的 API Key / provider 凭据 | 放在 .env 或 runtime/secrets/，不要提交到仓库 |
+| 网络 | 可访问模型 API 与目标数据源 | 离线时可查看已有账本、上传文件、手工补数据 |
+| Python 3 | 可选 | 解析 xlsx/pdf 时需要 openpyxl/pypdf；不装可用 CSV 或已有文本 |
+| 数据源凭据 | 可选 | Tushare 积分、FRED key 等；免费源优先，无 key 可上传 CSV |
+| 使用范围 | 单机、单用户 | 没有多租户/RBAC；不要直接把 Broker 暴露到公网 |
+| 远程访问 | 需要 --token + 可信网络 | 口令只拦网络来源，本机进程免口令 |
+| 成本 | 模型 token + 可选付费数据 | 仓库不提供额度；DataGateway 有配额/付费控制 |
+| 合规 | 研究流程演示，不构成投资建议 | 第三方数据 license、审计/法务结论由使用者自行确认 |
+
 ## 快速开始
-
-依赖：
-
-- **Node.js ≥ 18**（必需）
-- **DeepSeek Harness（dsh CLI）**（员工真正运行时需要）
-- 模型凭据（在面板里配置，或通过环境变量引用）
-- 网络（取数时）
-- Python 3（可选，解析 xlsx/pdf）
 
 ~~~bash
 git clone <repo-url> TeamPanel
