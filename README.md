@@ -58,22 +58,70 @@ evidence/sources.jsonl 证据 S# / snapshot / sha256
 runtime/ledger/        append-only 事件账本
 ~~~
 
-## 使用前提
+## 使用前提：从 GitHub 拉取后能用到什么程度
 
-| 类别 | 要求 | 说明 |
-|---|---|---|
-| 操作系统 | macOS / Linux / Windows | 核心 Broker 与面板只依赖 Node；Windows 用 start.cmd |
-| Node.js | ≥ 18，推荐 22 LTS | 必需；无需数据库、Redis 或其他服务 |
-| Agent 运行时 | DeepSeek Harness（dsh CLI） | 员工真正执行研究时需要；没有 dsh 只能浏览面板、账本与已有产物 |
-| 模型 | OpenAI 兼容网关或 dsh 支持的 provider | 默认配置引用 opencode-go/deepseek-v4.1-flash，需要自行配置并替换 |
-| 模型凭据 | 自己的 API Key / provider 凭据 | 放在 .env 或 runtime/secrets/，不要提交到仓库 |
-| 网络 | 可访问模型 API 与目标数据源 | 离线时可查看已有账本、上传文件、手工补数据 |
-| Python 3 | 可选 | 解析 xlsx/pdf 时需要 openpyxl/pypdf；不装可用 CSV 或已有文本 |
-| 数据源凭据 | 可选 | Tushare 积分、FRED key 等；免费源优先，无 key 可上传 CSV |
-| 使用范围 | 单机、单用户 | 没有多租户/RBAC；不要直接把 Broker 暴露到公网 |
-| 远程访问 | 需要 --token + 可信网络 | 口令只拦网络来源，本机进程免口令 |
-| 成本 | 模型 token + 可选付费数据 | 仓库不提供额度；DataGateway 有配额/付费控制 |
-| 合规 | 研究流程演示，不构成投资建议 | 第三方数据 license、审计/法务结论由使用者自行确认 |
+### 1. 只看 Panel（最小前提）
+
+必须：
+
+- **Node.js ≥ 18**（推荐 22 LTS）；
+- 能 clone 仓库并写入运行目录；
+- 现代浏览器。
+
+**不需要**：DeepSeek Harness、模型 API Key、Python、数据库、Redis。
+
+~~~bash
+git clone <repo-url> TeamPanel
+cd TeamPanel
+node scripts/init-worktree.js --demo
+./start.sh
+~~~
+
+可以打开面板、看 demo/历史账本、泳道图、交付物、模型/技能配置。  
+**不能**启动员工、自动采集数据或自动生成报告。
+
+### 2. 派活、跑员工（完整研究前提）
+
+在最小前提上增加：
+
+- **必须安装 DeepSeek Harness（dsh CLI）**，并确保 dsh 在 PATH；
+- 或用 DSH_BIN 指定 dsh 路径；
+- 配置模型凭据（OpenAI 兼容网关，或 dsh 支持的 provider）；
+- 能访问模型 API 的网络。
+
+没有 dsh 时面板仍能打开，但员工无法启动，顶部会显示「未找到 dsh · 员工无法启动」。  
+没有模型凭据时，可以看板/整理数据，但不能真正跑研究。
+
+~~~bash
+cp .env.example .env
+# 填自己的模型/数据源 key，不要提交
+
+cp config/desk.json config/desk.local.json
+# 本机端口/模型覆盖，已被 gitignore
+
+./start.sh
+~~~
+
+首次没有预置模型：打开面板 → 左下角「模型配置」→「＋ 新建模型配置」，填一个 OpenAI 兼容网关，保存并应用。
+
+### 3. 数据采集与报告
+
+- **网络**：访问模型 API 与目标数据源；
+- **可选数据源凭据**：Tushare 积分、FRED key、A2A 等；没有就使用免费源或上传 CSV；
+- **可选 Python 3**：
+  - 解析 xlsx/pdf：需要 openpyxl / pypdf；
+  - 生成 docx 报告：需要 python-docx；
+  - 不装 Python 也可用 CSV/已有文本，但部分报告/表格能力受限；
+- **数据 license**：第三方数据的报告使用范围由使用者自行确认。
+
+### 4. 部署与使用限制
+
+- **单机、单用户**：没有多租户、RBAC、分布式配额；
+- **不要直接把 Broker 暴露到公网**；
+- 远程访问需要 --token + 可信网络；
+- 无需数据库/Redis，但运行数据会写入 runtime/ 和 vault/，需要可写磁盘；
+- 模型 token 与付费数据源费用由使用者承担；仓库不提供 API 额度；
+- 研究流程演示，不构成投资建议；审计/法务结论不替代真实合规审查。
 
 ## 快速开始
 
