@@ -1,6 +1,7 @@
 "use strict";
 /** Audit numeric figures referenced by report sections. */
 const fs = require("fs"), path = require("path");
+const figureCatalog = require("./figure-catalog");
 const ROOT = path.resolve(__dirname, "..");
 const CASE = process.argv[process.argv.indexOf("--case") + 1] || "";
 if (!CASE) { console.error("--case required"); process.exit(2); }
@@ -16,15 +17,26 @@ for (const rel of ["master.md", "sections/macro.md", "sections/industry.md", "se
 try { const ex = JSON.parse(fs.readFileSync(path.join(vault, "research", "exhibits.json"), "utf8")); (ex.items || []).forEach(x => { if (!refs.has(x.path)) refs.set(x.path, ["exhibits"]); }); } catch (e) {}
 let latestResearch = 0;
 try { for (const f of fs.readdirSync(path.join(vault, "research"))) { if (!/\.(md|json)$/.test(f)) continue; const st = fs.statSync(path.join(vault, "research", f)); latestResearch = Math.max(latestResearch, st.mtimeMs); } } catch (e) {}
+const available = figureCatalog.list(CASE);
+const titleMap = {};
+available.forEach(x => { titleMap[x.path] = x.title; });
+const used = new Set(refs.keys());
 const items = [], missing = [], stale = [];
 for (const [rel, usedBy] of refs) {
   const abs = path.join(vault, rel);
-  const item = { path: rel, usedBy, exists: false, bytes: 0, modifiedAt: "", stale: false };
-  try { const st = fs.statSync(abs); item.exists = true; item.bytes = st.size; item.modifiedAt = st.mtime.toISOString();
-    item.stale = st.mtimeMs < latestResearch - 60000; if (item.stale) stale.push(rel); } catch (e) { missing.push(rel); }
+  const item = { path: rel, title: titleMap[rel] || "", usedBy, exists: false, bytes: 0, modifiedAt: "", stale: false };
+  try {
+    const st = fs.statSync(abs);
+    const real = fs.realpathSync(abs);
+    if (!real.startsWith(path.join(vault, "figures") + path.sep)) throw new Error("outside case figures");
+    item.exists = true; item.bytes = st.size; item.modifiedAt = st.mtime.toISOString();
+    item.stale = st.mtimeMs < latestResearch - 60000; if (item.stale) stale.push(rel);
+  } catch (e) { missing.push(rel); }
   items.push(item);
 }
-const out = { ok: missing.length === 0, case: CASE, count: items.length, usable: items.filter(x => x.exists).length,
-  missing, stale, items, generatedAt: new Date().toISOString() };
+const unused = available.filter(x => !used.has(x.path)).map(x => x.path);
+const out = { ok: items.length > 0 && missing.length === 0, case: CASE,
+  count: items.length, usable: items.filter(x => x.exists).length,
+  available: available.length, unused, missing, stale, items, generatedAt: new Date().toISOString() };
 fs.writeFileSync(path.join(vault, "research", "figures.json"), JSON.stringify(out, null, 2));
 console.log(JSON.stringify(out));

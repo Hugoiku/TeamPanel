@@ -1,6 +1,7 @@
 "use strict";
 /** Build deterministic numeric exhibits from structured research JSON. */
 const fs = require("fs"), path = require("path"), { spawnSync } = require("child_process");
+const figureCatalog = require("./figure-catalog");
 const ROOT = path.resolve(__dirname, "..");
 const CASE = process.argv[process.argv.indexOf("--case") + 1] || "";
 if (!CASE) process.exit(2);
@@ -49,21 +50,20 @@ const st = read("stock.json");
 const dcf = (st.valuation || {}).dcf || {};
 const sens = dcf.terminal_margin_sensitivity || {};
 if (Object.keys(sens).length) chart("stock-dcf-sensitivity", "DCF 对终值 FCF 利润率的敏感性（元/股）", Object.keys(sens).map(k => [k.replace("pct", "%"), Number(sens[k])]), ["S4","S53"]);
-// 通用回退：如果结构化 JSON 没有命中行业模板，使用 vault/<case>/figures 下已有 SVG，
-// 避免“底稿有图但最终报告无图”被 readability gate 误杀。
-if (!items.length) {
-  const figDir = path.join(base, "figures");
-  try {
-    const all = fs.readdirSync(figDir).filter(f => /\.svg$/i.test(f)).sort();
-    // 优先选择与投研结论直接相关的图，最多 8 张，避免报告被图表淹没。
-    const preferred = all.filter(f => /(nim|npl|roe|pb|dividend|scenario|coverage|revenue|credit|rate)/i.test(f));
-    const chosen = preferred.concat(all.filter(f => preferred.indexOf(f) < 0)).slice(0, 8);
-    chosen.forEach(f => {
-      const name = f.replace(/^fig-/, "").replace(/\.svg$/i, "").replace(/[-_]/g, " ");
-      items.push({ path: "figures/" + f, title: name, source: "existing-figure", sources: [], placement: "figures" });
-    });
-  } catch (e) {}
+// 通用补齐：模板只生成部分图时也补到目标数量；只使用本 case 的已有图，不伪造。
+const TARGET_FIGURES = 8;
+if (items.length < TARGET_FIGURES) {
+  const add = figureCatalog.supplement(CASE, items, TARGET_FIGURES);
+  items.push(...add);
 }
-const out = { ok: true, case: CASE, items, generatedAt: new Date().toISOString() };
+const out = items.length
+  ? { ok: true, case: CASE, items, generatedAt: new Date().toISOString() }
+  : { ok: false, case: CASE, items: [], error: "figures_missing",
+      hint: "本 case 没有可用图表；请先让员工生成 figures/*.svg/png 后再生成最终报告",
+      generatedAt: new Date().toISOString() };
+fs.writeFileSync(path.join(base, "research", "exhibits.json"), JSON.stringify(out, null, 2));
+console.log(JSON.stringify(out));
+if (!out.ok) process.exitCode = 1;
+
 fs.writeFileSync(path.join(base, "research", "exhibits.json"), JSON.stringify(out, null, 2));
 console.log(JSON.stringify({ ok: true, items: items.length }));

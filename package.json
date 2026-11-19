@@ -28,6 +28,7 @@
     "backup": "node scripts/backup.js",
     "restore": "node scripts/restore.js",
     "verify:report": "node scripts/verify-report.js",
+    "test:figures": "node scripts/test-figure-catalog.js",
     "test:data-request": "node scripts/test-data-request.js",
     "test:datatask": "node scripts/test-datatask.js",
     "test:datatask-flow": "node scripts/test-datatask-flow.js",
@@ -39,7 +40,7 @@
     "test:mcp": "node scripts/test-mcp-server.js",
     "test:work": "node scripts/test-work.js",
     "cleanup": "node scripts/cleanup.js --days 7",
-    "test:all": "node dashboard/test.js && node runtime/server/test/run.js && node scripts/test-collect.js && node scripts/test-source-chain.js && node scripts/test-data-quality.js && node scripts/test-data-crosscheck.js && node scripts/test-work.js && node scripts/test-data-request.js && node scripts/test-datatask.js && node scripts/test-datatask-flow.js && node scripts/test-datatask-worker.js && node scripts/test-datatask-restart.js",
+    "test:all": "node dashboard/test.js && node runtime/server/test/run.js && node scripts/test-collect.js && node scripts/test-source-chain.js && node scripts/test-data-quality.js && node scripts/test-data-crosscheck.js && node scripts/test-work.js && node scripts/test-figure-catalog.js && node scripts/test-data-request.js && node scripts/test-datatask.js && node scripts/test-datatask-flow.js && node scripts/test-datatask-worker.js && node scripts/test-datatask-restart.js",
     "test:intent": "node scripts/test-intent.js",
     "test:indicators": "node scripts/test-indicators.js"
   }

@@ -5793,7 +5793,15 @@ function ensureFinalReview(caseId, service, rel, version, requester) {
         if (!fs.existsSync(existingMaster)) return json(res, 500, { error: "主报告装配失败：" + String((mj && mj.error) || mr.err || "").slice(0, 300) });
       }
       // 1.4) 从结构化研究 JSON 生成数字图与催化剂日历，不依赖模型。
-      try { await runNode([path.join(ROOT, "scripts/build-exhibits.js"), "--case", caseId], env, 60000); } catch (e) {}
+      // 通用图表目录会补齐本 case 已有图；若一张都没有，显式失败，不伪造图表。
+      const exRun = await runNode([path.join(ROOT, "scripts/build-exhibits.js"), "--case", caseId], env, 60000);
+      let exj = null;
+      try { exj = JSON.parse(String(exRun.out || "").trim().split(String.fromCharCode(10)).filter(Boolean).pop()); } catch (e) {}
+      if (!exj || exj.ok === false) {
+        return json(res, 409, { error: "图表缺失，无法生成最终报告", code: "figures_missing",
+          hint: "请先让员工生成 figures/*.svg/png，或在报告流水线中确认图表后再试",
+          detail: String((exj && (exj.hint || exj.error)) || exRun.err || "").slice(0, 300) });
+      }
       try { await runNode([path.join(ROOT, "scripts/build-catalysts.js"), "--case", caseId], env, 30000); } catch (e) {}
       // 1.5) 为跨角色复核生成 brief（否则 cross-review 会报 missing_brief）
       for (const ag of mains) {
@@ -5801,7 +5809,10 @@ function ensureFinalReview(caseId, service, rel, version, requester) {
       }
       // 2) 交叉复核（high 阻断）
       const cr = await runNode([path.join(ROOT, "scripts/cross-review.js"), "--case", caseId], env, 120000);
-      let review = null; try { review = JSON.parse(String(cr.out || "").trim()); } catch (e) {}
+      let review = null;
+      try { review = JSON.parse(fs.readFileSync(vaultPath(caseId, "research/cross-review.json"), "utf8")); } catch (e) {}
+      if (!review) { try { review = JSON.parse(String(cr.out || "").trim()); } catch (e) {} }
+      if (review && !Array.isArray(review.issues)) review.issues = [];
       let sem0 = null; try { sem0 = JSON.parse(fs.readFileSync(vaultPath(caseId, "research/cross-review-semantic.json"), "utf8")); } catch (e) {}
       if (sem0 && sem0.ok === false) {
         let waiver = null; try { waiver = JSON.parse(fs.readFileSync(vaultPath(caseId, "research/semantic-waiver.json"), "utf8")); } catch (e) {}
@@ -6194,8 +6205,8 @@ function ensureFinalReview(caseId, service, rel, version, requester) {
         { id: "semantic", label: "语义一致性", status: (() => { const s0 = readJson(path.join(baseR, "cross-review-semantic.json")); const w = readJson(path.join(baseR, "semantic-waiver.json")); return w ? "done" : (s0 ? (s0.ok === false ? "failed" : (s0.high > 0 ? "failed" : "done")) : "pending"); })(),
           detail: (() => { const s0 = readJson(path.join(baseR, "cross-review-semantic.json")); const w = readJson(path.join(baseR, "semantic-waiver.json")); return w ? ("已豁免：" + String(w.reason || "").slice(0, 60)) : (s0 ? (s0.ok === false ? String(s0.error || "模型未返回") : ("high " + (s0.high || 0) + " · issues " + ((s0.issues || []).length))) : "异步复核未完成"); })() },
         { id: "master", label: "主报告装配", status: exists(path.join(baseP, "master.md")) ? "done" : "pending", detail: "reports/master.md" },
-        { id: "figures", label: "图表", status: (() => { const f = readJson(path.join(baseR, "figures.json")); return f ? (f.missing && f.missing.length ? "failed" : "done") : "pending"; })(),
-          detail: (() => { const f = readJson(path.join(baseR, "figures.json")); return f ? (f.count + " 图 · 可用 " + f.usable + (f.stale && f.stale.length ? " · 陈旧 " + f.stale.length : "")) : "未运行"; })() },
+        { id: "figures", label: "图表", status: (() => { const f = readJson(path.join(baseR, "figures.json")); return f ? (f.ok ? "done" : "failed") : "pending"; })(),
+          detail: (() => { const f = readJson(path.join(baseR, "figures.json")); return f ? (f.count + " 图 · 可用 " + f.usable + (f.available !== undefined ? " · 可用库 " + f.available : "") + (f.unused && f.unused.length ? " · 未用 " + f.unused.length : "") + (f.stale && f.stale.length ? " · 陈旧 " + f.stale.length : "")) : "未运行"; })() },
         { id: "investor", label: "投资者编译", status: exists(path.join(baseP, "investor-final.md")) ? "done" : "pending", detail: "investor-final.md" },
         { id: "claim-evidence", label: "论点映射", status: (() => { const m = readJson(path.join(baseR, "claim-evidence.json")); return m ? (m.mapped === m.claims ? "done" : "failed") : "pending"; })(),
           detail: (() => { const m = readJson(path.join(baseR, "claim-evidence.json")); return m ? (m.mapped + "/" + m.claims + " 有证据") : "未运行"; })() },
