@@ -7961,7 +7961,13 @@ button.primary{background:#2563eb;border-color:#2563eb;color:#fff}
       if (ns === "valuation") { midTab = "valuation"; applyMidTab(); renderInvestorDash(); return; }
       if (ns === "conflicts" || ns === "pipeline") {
         var box = $(ns === "conflicts" ? "conflictBox" : "finalPipelineBox");
-        if (box) { box.open = true; box.scrollIntoView({ behavior: "smooth", block: "center" }); }
+        if (box) {
+          box.open = true;
+          // 目标子项可能在收起的父级分组里：逐级展开，否则点了也“看不到”。
+          var p0 = box.parentElement;
+          while (p0) { if (p0.tagName === "DETAILS") p0.open = true; p0 = p0.parentElement; }
+          setTimeout(function () { try { box.scrollIntoView({ behavior: "smooth", block: "center" }); } catch (e) {} }, 50);
+        }
       } else if (ns === "pending") {
         pendingOpen = true; livePoll();
         try { var pb = $("pendingBox"); if (pb) pb.scrollIntoView({ behavior: "smooth", block: "center" }); } catch (e) {}
