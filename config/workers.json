@@ -1,0 +1,72 @@
+{
+  "router": {
+    "mode": "deterministic",
+    "fallback": "plan-agent",
+    "maxConcurrency": 2
+  },
+  "workers": [
+    {
+      "agent": "macro",
+      "name": "宏观研究员",
+      "capabilities": [
+        "macro",
+        "data",
+        "policy"
+      ],
+      "maxSlots": 2,
+      "enabled": true
+    },
+    {
+      "agent": "industry",
+      "name": "行业研究员",
+      "capabilities": [
+        "industry",
+        "chain",
+        "data"
+      ],
+      "maxSlots": 2,
+      "enabled": true
+    },
+    {
+      "agent": "stock",
+      "name": "个股研究员",
+      "capabilities": [
+        "stock",
+        "valuation",
+        "data"
+      ],
+      "maxSlots": 2,
+      "enabled": true
+    },
+    {
+      "agent": "audit",
+      "name": "信息审计",
+      "capabilities": [
+        "audit",
+        "review"
+      ],
+      "maxSlots": 2,
+      "enabled": true
+    },
+    {
+      "agent": "legal",
+      "name": "法律顾问",
+      "capabilities": [
+        "legal",
+        "review"
+      ],
+      "maxSlots": 2,
+      "enabled": true
+    },
+    {
+      "agent": "trader",
+      "name": "交易员",
+      "capabilities": [
+        "trade",
+        "risk"
+      ],
+      "maxSlots": 2,
+      "enabled": true
+    }
+  ]
+}

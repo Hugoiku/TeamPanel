@@ -1,0 +1,50 @@
+{
+  "label": "银行",
+  "keywords": [
+    "银行",
+    "净息差",
+    "不良率",
+    "拨备",
+    "CET1",
+    "城商行"
+  ],
+  "kpis": [
+    "NIM",
+    "不良率",
+    "拨备覆盖率",
+    "CET1",
+    "ROE"
+  ],
+  "valuationMethods": [
+    "ddm",
+    "pb_rotce",
+    "comps"
+  ],
+  "reportSections": [
+    "投委会速览",
+    "净息差",
+    "资产质量",
+    "资本充足",
+    "盈利预测",
+    "估值",
+    "风险"
+  ],
+  "sourceHints": [
+    "央行",
+    "金融监管总局",
+    "年报",
+    "XBRL"
+  ],
+  "reviewChecks": [
+    "不良口径",
+    "资本口径",
+    "拨备口径"
+  ],
+  "tushareL1": [
+    "银行"
+  ],
+  "tushareL2": [
+    "银行"
+  ],
+  "tushareL3": []
+}

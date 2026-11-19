@@ -1,0 +1,11 @@
+{
+  "id": "stats-releases",
+  "name": "国家统计局 · 最新发布",
+  "category": "macro",
+  "kind": "html",
+  "url": "https://www.stats.gov.cn/sj/zxfb/",
+  "force": false,
+  "evidenceField": "统计局最新发布",
+  "notes": "月度/季度数据发布列表。",
+  "tier": "official"
+}

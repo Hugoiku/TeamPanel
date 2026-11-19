@@ -1,0 +1,14 @@
+{
+  "type": "auto",
+  "label": "行业自适应",
+  "sections": [
+    "summary",
+    "industry",
+    "sector",
+    "company",
+    "risks",
+    "metrics",
+    "figures",
+    "appendix"
+  ]
+}

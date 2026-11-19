@@ -1,0 +1,11 @@
+{
+  "id": "mofcom-home",
+  "name": "商务部 · 首页（出口管制/外贸）",
+  "category": "policy",
+  "kind": "html",
+  "url": "https://www.mofcom.gov.cn/",
+  "force": false,
+  "evidenceField": "商务部政策动态",
+  "notes": "出口管制、外贸政策相关公告入口。",
+  "tier": "official"
+}

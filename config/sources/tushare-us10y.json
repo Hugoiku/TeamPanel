@@ -1,0 +1,31 @@
+{
+  "id": "tushare-us10y",
+  "name": "美国10年期国债收益率",
+  "category": "macro",
+  "kind": "script",
+  "runtime": "node",
+  "script": "scripts/tushare-series.js",
+  "args": [
+    "--api",
+    "us_tycr",
+    "--range",
+    "{range}",
+    "--date-mode",
+    "daily",
+    "--fields",
+    "date,y10",
+    "--period-field",
+    "date",
+    "--value-field",
+    "y10",
+    "--unit",
+    "%"
+  ],
+  "vars": {
+    "range": "2025-01..2026-10"
+  },
+  "force": true,
+  "tier": "market-api",
+  "evidenceField": "美国10年期国债收益率",
+  "notes": "Tushare us_tycr 通用序列；R007 不是 DR007，仅作代理。"
+}

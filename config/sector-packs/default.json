@@ -1,0 +1,25 @@
+{
+  "label": "通用",
+  "keywords": [],
+  "kpis": [
+    "收入",
+    "利润",
+    "估值"
+  ],
+  "valuationMethods": [
+    "comps",
+    "dcf"
+  ],
+  "reportSections": [
+    "投委会速览",
+    "行业",
+    "公司",
+    "估值",
+    "风险"
+  ],
+  "sourceHints": [],
+  "reviewChecks": [],
+  "tushareL1": [],
+  "tushareL2": [],
+  "tushareL3": []
+}

@@ -1,0 +1,28 @@
+{
+  "label": "SOTP",
+  "required": [
+    "segments",
+    "netDebt",
+    "shares"
+  ],
+  "fields": [
+    {
+      "key": "segments",
+      "label": "分部列表（JSON: name/value）",
+      "type": "json",
+      "unit": ""
+    },
+    {
+      "key": "netDebt",
+      "label": "净负债",
+      "type": "number",
+      "unit": "亿元"
+    },
+    {
+      "key": "shares",
+      "label": "股本",
+      "type": "number",
+      "unit": "亿股"
+    }
+  ]
+}

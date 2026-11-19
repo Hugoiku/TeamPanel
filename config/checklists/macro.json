@@ -1,0 +1,98 @@
+{
+  "version": 1,
+  "agent": "macro",
+  "required": [
+    {
+      "id": "growth",
+      "name": "增长",
+      "purpose": "GDP/工业/消费/投资/出口的方向与结构"
+    },
+    {
+      "id": "inflation",
+      "name": "通胀",
+      "purpose": "CPI/PPI/核心通胀与上下游价格传导"
+    },
+    {
+      "id": "liquidity_credit",
+      "name": "流动性与信用",
+      "purpose": "利率、社融、M1/M2、信用利差"
+    },
+    {
+      "id": "fiscal_debt",
+      "name": "财政与地方债务",
+      "purpose": "预算、土地出让、专项债、化债、付息压力"
+    },
+    {
+      "id": "external_fx",
+      "name": "外部与汇率",
+      "purpose": "进出口、国际收支、汇率、资本流动"
+    },
+    {
+      "id": "policy",
+      "name": "政策",
+      "purpose": "货币/财政/产业政策方向与掣肘，区分文件与预期"
+    },
+    {
+      "id": "demand_decomposition",
+      "name": "需求拆解",
+      "purpose": "C/I/G/X-M 谁拉动谁拖累"
+    },
+    {
+      "id": "market_validation",
+      "name": "市场验证",
+      "purpose": "利率、信用、汇率、波动率是否验证判断"
+    },
+    {
+      "id": "scenarios_risks",
+      "name": "情景与风险",
+      "purpose": "可证伪情景、最大触发器、传导链"
+    },
+    {
+      "id": "data_quality",
+      "name": "数据与口径",
+      "purpose": "来源、时间窗、修订、缺口"
+    }
+  ],
+  "optional": [
+    {
+      "id": "real_estate",
+      "name": "房地产与信用周期",
+      "purpose": "地产投资、销售、融资、地方财政"
+    },
+    {
+      "id": "inventory_cycle",
+      "name": "库存与产能周期",
+      "purpose": "判断景气位置与补库/去库"
+    },
+    {
+      "id": "employment_income",
+      "name": "就业与收入",
+      "purpose": "消费的内生支撑"
+    },
+    {
+      "id": "global_macro",
+      "name": "全球宏观",
+      "purpose": "美欧日央行、全球 PMI、地缘"
+    },
+    {
+      "id": "positioning",
+      "name": "仓位与拥挤度",
+      "purpose": "判断预期是否已计入"
+    },
+    {
+      "id": "demographics",
+      "name": "人口与长期增长",
+      "purpose": "长期估值假设"
+    },
+    {
+      "id": "policy_documents",
+      "name": "政策原文",
+      "purpose": "避免二手解读"
+    },
+    {
+      "id": "climate_energy",
+      "name": "气候与能源",
+      "purpose": "供给冲击与成本"
+    }
+  ]
+}

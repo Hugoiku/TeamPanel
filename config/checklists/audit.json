@@ -1,0 +1,58 @@
+{
+  "version": 1,
+  "agent": "audit",
+  "required": [
+    {
+      "id": "source_validity",
+      "name": "来源有效性",
+      "purpose": "一手性、权威性、时效"
+    },
+    {
+      "id": "numeric_reconciliation",
+      "name": "数字勾稽",
+      "purpose": "收入/利润/现金流/资产负债表"
+    },
+    {
+      "id": "unit_frequency",
+      "name": "单位/频率/口径",
+      "purpose": "同比环比、现价/不变价"
+    },
+    {
+      "id": "claim_evidence",
+      "name": "结论-证据映射",
+      "purpose": "每条判断可回溯 [S#]"
+    },
+    {
+      "id": "assumption_audit",
+      "name": "假设审计",
+      "purpose": "DCF/预测/情景假设"
+    },
+    {
+      "id": "completeness",
+      "name": "完整性",
+      "purpose": "必需章节/模块是否覆盖"
+    },
+    {
+      "id": "conflict",
+      "name": "冲突与反证",
+      "purpose": "跨源/跨角色矛盾"
+    },
+    {
+      "id": "version_diff",
+      "name": "版本差异",
+      "purpose": "修改是否只改措辞"
+    }
+  ],
+  "optional": [
+    {
+      "id": "sampling",
+      "name": "抽样复核",
+      "purpose": "大样本抽查"
+    },
+    {
+      "id": "external_check",
+      "name": "外部交叉",
+      "purpose": "第三方/公告核对"
+    }
+  ]
+}

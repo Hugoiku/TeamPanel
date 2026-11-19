@@ -1,0 +1,41 @@
+{
+  "label": "可比公司",
+  "required": [
+    "metric",
+    "peerMultiple",
+    "metricValue",
+    "shares"
+  ],
+  "fields": [
+    {
+      "key": "metricValue",
+      "label": "估值指标值（收入/利润）",
+      "type": "number",
+      "unit": "亿元"
+    },
+    {
+      "key": "peerMultiple",
+      "label": "可比公司倍数",
+      "type": "number",
+      "unit": "x"
+    },
+    {
+      "key": "netCash",
+      "label": "净现金",
+      "type": "number",
+      "unit": "亿元"
+    },
+    {
+      "key": "shares",
+      "label": "股本",
+      "type": "number",
+      "unit": "亿股"
+    },
+    {
+      "key": "peers",
+      "label": "可比公司列表（JSON）",
+      "type": "json",
+      "unit": ""
+    }
+  ]
+}

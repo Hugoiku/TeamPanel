@@ -1,0 +1,22 @@
+{
+  "id": "stats-real-estate",
+  "name": "国家统计局 · 房地产最新发布",
+  "category": "industry",
+  "kind": "script",
+  "runtime": "python",
+  "script": "scripts/stats_release.py",
+  "args": [
+    "--list",
+    "{list}",
+    "--keyword",
+    "{keyword}"
+  ],
+  "vars": {
+    "list": "https://www.stats.gov.cn/sj/zxfb/",
+    "keyword": "房地产"
+  },
+  "force": false,
+  "tier": "official",
+  "evidenceField": "房地产销售/投资/到位资金",
+  "notes": "通用发布页解析：换 --var keyword 可取其他主题；请核对列名/单位。"
+}

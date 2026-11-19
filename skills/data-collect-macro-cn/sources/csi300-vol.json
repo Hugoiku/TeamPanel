@@ -1,0 +1,23 @@
+{
+  "id": "csi300-vol",
+  "name": "沪深300 · 20日年化已实现波动率",
+  "category": "market",
+  "kind": "script",
+  "script": "scripts/vol.js",
+  "args": [
+    "--code",
+    "{code}",
+    "--window",
+    "20",
+    "--days",
+    "90"
+  ],
+  "force": true,
+  "tier": "market-api",
+  "evidenceField": "沪深300 20日年化已实现波动率",
+  "notes": "东财日K计算，非期权隐含波动率；年化按 252 交易日。",
+  "runtime": "node",
+  "vars": {
+    "code": "000300"
+  }
+}

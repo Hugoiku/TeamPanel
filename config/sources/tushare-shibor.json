@@ -1,0 +1,31 @@
+{
+  "id": "tushare-shibor",
+  "name": "SHIBOR 1W",
+  "category": "macro",
+  "kind": "script",
+  "runtime": "node",
+  "script": "scripts/tushare-series.js",
+  "args": [
+    "--api",
+    "shibor",
+    "--range",
+    "{range}",
+    "--date-mode",
+    "daily",
+    "--fields",
+    "date,1w",
+    "--period-field",
+    "date",
+    "--value-field",
+    "1w",
+    "--unit",
+    "%"
+  ],
+  "vars": {
+    "range": "2025-01..2026-10"
+  },
+  "force": true,
+  "tier": "market-api",
+  "evidenceField": "SHIBOR 1W",
+  "notes": "Tushare shibor 通用序列；R007 不是 DR007，仅作代理。"
+}

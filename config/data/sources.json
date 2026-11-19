@@ -1,0 +1,1053 @@
+{
+  "version": 1,
+  "note": "能力型数据源注册表；metric.sources 数组顺序 = fallback 顺序（免费优先，积分/账号源在后）。access 声明凭据与探测方式，source-health 据此过滤不可用源。",
+  "sources": [
+    {
+      "id": "stats",
+      "name": "国家统计局",
+      "configSource": "stats-release",
+      "capabilities": [
+        "macro",
+        "industry.official"
+      ],
+      "formats": [
+        "html"
+      ],
+      "auth": "none",
+      "priority": 1,
+      "structured": false
+    },
+    {
+      "id": "mof",
+      "name": "财政部",
+      "configSource": "mof-release",
+      "capabilities": [
+        "macro.fiscal",
+        "policy"
+      ],
+      "formats": [
+        "html"
+      ],
+      "auth": "none",
+      "priority": 1,
+      "structured": false
+    },
+    {
+      "id": "pbc",
+      "name": "中国人民银行",
+      "configSource": "pbc-home",
+      "capabilities": [
+        "macro.liquidity",
+        "policy"
+      ],
+      "formats": [
+        "html"
+      ],
+      "auth": "none",
+      "priority": 1,
+      "structured": false
+    },
+    {
+      "id": "chinabond",
+      "name": "中债",
+      "configSource": "chinabond-10y",
+      "capabilities": [
+        "macro.rates"
+      ],
+      "formats": [
+        "html"
+      ],
+      "auth": "none",
+      "priority": 1
+    },
+    {
+      "id": "eastmoney",
+      "name": "东方财富",
+      "configSource": "eastmoney-quote",
+      "capabilities": [
+        "market.quote",
+        "macro.series"
+      ],
+      "formats": [
+        "json"
+      ],
+      "auth": "none",
+      "priority": 2
+    },
+    {
+      "id": "tushare",
+      "name": "Tushare",
+      "configSource": "tushare-api",
+      "capabilities": [
+        "market",
+        "macro.series"
+      ],
+      "formats": [
+        "api"
+      ],
+      "auth": "token",
+      "priority": 2,
+      "access": {
+        "tier": "credit",
+        "auth": "token",
+        "minPoints": 2000,
+        "secret": "runtime/secrets/tushare.json",
+        "env": [
+          "TUSHARE_TOKEN"
+        ],
+        "homepage": "https://tushare.pro",
+        "note": "可选积分源：需 Tushare token 且积分足够；免费用户请用免费源或上传 CSV",
+        "probe": {
+          "type": "tushare",
+          "api": "cn_m",
+          "params": {
+            "start_m": "202601",
+            "end_m": "202601"
+          },
+          "fields": "month,m1_yoy"
+        }
+      },
+      "structured": true
+    },
+    {
+      "id": "usgs",
+      "name": "USGS",
+      "configSource": "usgs-germanium",
+      "capabilities": [
+        "industry",
+        "commodity"
+      ],
+      "formats": [
+        "pdf"
+      ],
+      "auth": "none",
+      "priority": 2
+    },
+    {
+      "id": "cninfo",
+      "name": "巨潮资讯",
+      "configSource": "cninfo-home",
+      "capabilities": [
+        "company.filing",
+        "disclosure"
+      ],
+      "formats": [
+        "html",
+        "pdf"
+      ],
+      "auth": "none",
+      "priority": 1,
+      "structured": false
+    },
+    {
+      "id": "mysteel",
+      "name": "Mysteel",
+      "configSource": "web",
+      "capabilities": [
+        "commodity.price",
+        "industry"
+      ],
+      "formats": [
+        "html"
+      ],
+      "auth": "account",
+      "priority": 2,
+      "access": {
+        "tier": "account",
+        "auth": "account",
+        "note": "需要账号登录，默认不启用；可上传 CSV 或手动添加 URL"
+      },
+      "structured": false
+    },
+    {
+      "id": "smm",
+      "name": "SMM",
+      "configSource": "web",
+      "capabilities": [
+        "commodity.price",
+        "industry"
+      ],
+      "formats": [
+        "html"
+      ],
+      "auth": "account",
+      "priority": 2,
+      "access": {
+        "tier": "account",
+        "auth": "account",
+        "note": "需要账号登录，默认不启用；可上传 CSV 或手动添加 URL"
+      },
+      "structured": false
+    },
+    {
+      "id": "maoyan",
+      "name": "猫眼专业版",
+      "configSource": "web",
+      "capabilities": [
+        "media.box_office"
+      ],
+      "formats": [
+        "html"
+      ],
+      "auth": "account",
+      "priority": 2,
+      "access": {
+        "tier": "account",
+        "auth": "account",
+        "note": "需要账号登录，默认不启用；可上传 CSV 或手动添加 URL"
+      },
+      "structured": false
+    },
+    {
+      "id": "dengta",
+      "name": "灯塔专业版",
+      "configSource": "web",
+      "capabilities": [
+        "media.box_office"
+      ],
+      "formats": [
+        "html"
+      ],
+      "auth": "account",
+      "priority": 2,
+      "access": {
+        "tier": "account",
+        "auth": "account",
+        "note": "需要账号登录，默认不启用；可上传 CSV 或手动添加 URL"
+      },
+      "structured": false
+    },
+    {
+      "id": "questmobile",
+      "name": "QuestMobile",
+      "configSource": "web",
+      "capabilities": [
+        "media.mau",
+        "media.ad_revenue"
+      ],
+      "formats": [
+        "html",
+        "pdf"
+      ],
+      "auth": "account",
+      "priority": 2,
+      "access": {
+        "tier": "account",
+        "auth": "account",
+        "note": "需要账号登录，默认不启用；可上传 CSV 或手动添加 URL"
+      },
+      "structured": false
+    },
+    {
+      "id": "nrta",
+      "name": "国家广电总局",
+      "configSource": "web",
+      "capabilities": [
+        "media.content_filings",
+        "media.policy"
+      ],
+      "formats": [
+        "html"
+      ],
+      "auth": "none",
+      "priority": 1,
+      "structured": false
+    },
+    {
+      "id": "company_filing",
+      "name": "公司公告/财报",
+      "configSource": "cninfo-home",
+      "capabilities": [
+        "company.financial",
+        "company.filing"
+      ],
+      "formats": [
+        "pdf",
+        "html"
+      ],
+      "auth": "none",
+      "priority": 1,
+      "structured": false
+    },
+    {
+      "id": "eastmoney-cpi",
+      "name": "东方财富 · CPI 月度",
+      "configSource": "eastmoney-cpi",
+      "capabilities": [
+        "macro.cpi"
+      ],
+      "formats": [
+        "json"
+      ],
+      "auth": "none",
+      "priority": 2,
+      "connector": "eastmoney",
+      "periodField": "REPORT_DATE",
+      "valueField": "NATIONAL_SAME",
+      "unit": "%"
+    },
+    {
+      "id": "eastmoney-ppi",
+      "name": "东方财富 · PPI 月度",
+      "configSource": "eastmoney-ppi",
+      "capabilities": [
+        "macro.ppi"
+      ],
+      "formats": [
+        "json"
+      ],
+      "auth": "none",
+      "priority": 2,
+      "connector": "eastmoney",
+      "periodField": "REPORT_DATE",
+      "valueField": "PPI_SAME",
+      "unit": "%"
+    },
+    {
+      "id": "eastmoney-pmi",
+      "name": "东方财富 · PMI 月度",
+      "configSource": "eastmoney-pmi",
+      "capabilities": [
+        "macro.pmi"
+      ],
+      "formats": [
+        "json"
+      ],
+      "auth": "none",
+      "priority": 2,
+      "connector": "eastmoney",
+      "periodField": "REPORT_DATE",
+      "valueField": "MAKE_INDEX",
+      "unit": ""
+    },
+    {
+      "id": "eastmoney-gdp",
+      "name": "东方财富 · GDP 季度",
+      "configSource": "eastmoney-gdp",
+      "capabilities": [
+        "macro.gdp"
+      ],
+      "formats": [
+        "json"
+      ],
+      "auth": "none",
+      "priority": 2,
+      "connector": "eastmoney",
+      "periodField": "REPORT_DATE",
+      "valueField": "DOMESTICL_PRODUCT_BASE",
+      "unit": "亿元"
+    },
+    {
+      "id": "chinabond-10y",
+      "name": "中债10年期国债",
+      "configSource": "chinabond-10y",
+      "capabilities": [
+        "macro.rates"
+      ],
+      "formats": [
+        "script"
+      ],
+      "auth": "none",
+      "priority": 1
+    },
+    {
+      "id": "stats-core-cpi",
+      "name": "国家统计局核心CPI",
+      "configSource": "stats-core-cpi",
+      "capabilities": [
+        "macro.inflation"
+      ],
+      "formats": [
+        "script"
+      ],
+      "auth": "none",
+      "priority": 1
+    },
+    {
+      "id": "csi300-vol",
+      "name": "沪深300波动率",
+      "configSource": "csi300-vol",
+      "capabilities": [
+        "market.volatility"
+      ],
+      "formats": [
+        "script"
+      ],
+      "auth": "none",
+      "priority": 1
+    },
+    {
+      "id": "cninfo-home",
+      "name": "巨潮资讯 · 首页",
+      "configSource": "cninfo-home",
+      "capabilities": [
+        "custom"
+      ],
+      "formats": [
+        "html"
+      ],
+      "auth": "none",
+      "priority": 3,
+      "status": "active",
+      "structured": false
+    },
+    {
+      "id": "eastmoney-dxy",
+      "name": "东方财富 · 美元指数 DXY（UDI）",
+      "configSource": "eastmoney-dxy",
+      "capabilities": [
+        "custom"
+      ],
+      "formats": [
+        "json"
+      ],
+      "auth": "none",
+      "priority": 3,
+      "status": "active"
+    },
+    {
+      "id": "eastmoney-quote",
+      "name": "东方财富 · 个股行情",
+      "configSource": "eastmoney-quote",
+      "capabilities": [
+        "custom"
+      ],
+      "formats": [
+        "json"
+      ],
+      "auth": "none",
+      "priority": 3,
+      "status": "active"
+    },
+    {
+      "id": "mof-fiscal",
+      "name": "财政部 · 财政收支最新发布",
+      "configSource": "mof-fiscal",
+      "capabilities": [
+        "custom"
+      ],
+      "formats": [
+        "script"
+      ],
+      "auth": "none",
+      "priority": 3,
+      "status": "active"
+    },
+    {
+      "id": "mof-release",
+      "name": "财政部 · 按关键词取最新发布",
+      "configSource": "mof-release",
+      "capabilities": [
+        "custom"
+      ],
+      "formats": [
+        "script"
+      ],
+      "auth": "none",
+      "priority": 3,
+      "status": "active"
+    },
+    {
+      "id": "mofcom-home",
+      "name": "商务部 · 首页（出口管制/外贸）",
+      "configSource": "mofcom-home",
+      "capabilities": [
+        "custom"
+      ],
+      "formats": [
+        "html"
+      ],
+      "auth": "none",
+      "priority": 3,
+      "status": "active",
+      "structured": false
+    },
+    {
+      "id": "pbc-home",
+      "name": "中国人民银行 · 首页政策/流动性",
+      "configSource": "pbc-home",
+      "capabilities": [
+        "custom"
+      ],
+      "formats": [
+        "html"
+      ],
+      "auth": "none",
+      "priority": 3,
+      "status": "active",
+      "structured": false
+    },
+    {
+      "id": "stats-industrial",
+      "name": "国家统计局 · 工业增加值最新发布",
+      "configSource": "stats-industrial",
+      "capabilities": [
+        "custom"
+      ],
+      "formats": [
+        "script"
+      ],
+      "auth": "none",
+      "priority": 3,
+      "status": "active"
+    },
+    {
+      "id": "stats-real-estate",
+      "name": "国家统计局 · 房地产最新发布",
+      "configSource": "stats-real-estate",
+      "capabilities": [
+        "custom"
+      ],
+      "formats": [
+        "script"
+      ],
+      "auth": "none",
+      "priority": 3,
+      "status": "active"
+    },
+    {
+      "id": "stats-release",
+      "name": "国家统计局 · 按关键词取最新发布",
+      "configSource": "stats-release",
+      "capabilities": [
+        "custom"
+      ],
+      "formats": [
+        "script"
+      ],
+      "auth": "none",
+      "priority": 3,
+      "status": "active"
+    },
+    {
+      "id": "stats-releases",
+      "name": "国家统计局 · 最新发布",
+      "configSource": "stats-releases",
+      "capabilities": [
+        "custom"
+      ],
+      "formats": [
+        "html"
+      ],
+      "auth": "none",
+      "priority": 3,
+      "status": "active",
+      "structured": false
+    },
+    {
+      "id": "tushare-api",
+      "name": "Tushare · 通用宏观 API",
+      "configSource": "tushare-api",
+      "capabilities": [
+        "custom"
+      ],
+      "formats": [
+        "script"
+      ],
+      "auth": "none",
+      "priority": 3,
+      "status": "active",
+      "access": {
+        "tier": "credit",
+        "auth": "token",
+        "minPoints": 2000,
+        "secret": "runtime/secrets/tushare.json",
+        "env": [
+          "TUSHARE_TOKEN"
+        ],
+        "homepage": "https://tushare.pro",
+        "note": "可选积分源：需 Tushare token 且积分足够；免费用户请用免费源或上传 CSV",
+        "probe": {
+          "type": "tushare",
+          "api": "cn_m",
+          "params": {
+            "start_m": "202601",
+            "end_m": "202601"
+          },
+          "fields": "month,m1_yoy"
+        }
+      },
+      "structured": true
+    },
+    {
+      "id": "tushare-pmi-detail",
+      "name": "Tushare · PMI 分项",
+      "configSource": "tushare-pmi-detail",
+      "capabilities": [
+        "custom"
+      ],
+      "formats": [
+        "script"
+      ],
+      "auth": "none",
+      "priority": 3,
+      "status": "active",
+      "access": {
+        "tier": "credit",
+        "auth": "token",
+        "minPoints": 2000,
+        "secret": "runtime/secrets/tushare.json",
+        "env": [
+          "TUSHARE_TOKEN"
+        ],
+        "homepage": "https://tushare.pro",
+        "note": "可选积分源：需 Tushare token 且积分足够；免费用户请用免费源或上传 CSV",
+        "probe": {
+          "type": "tushare",
+          "api": "cn_m",
+          "params": {
+            "start_m": "202601",
+            "end_m": "202601"
+          },
+          "fields": "month,m1_yoy"
+        }
+      },
+      "structured": true
+    },
+    {
+      "id": "usgs-germanium",
+      "name": "USGS · Germanium 年报 PDF",
+      "configSource": "usgs-germanium",
+      "capabilities": [
+        "custom"
+      ],
+      "formats": [
+        "pdf"
+      ],
+      "auth": "none",
+      "priority": 3,
+      "status": "active"
+    },
+    {
+      "id": "tushare-sf-month",
+      "name": "Tushare · 社会融资规模月度增量",
+      "configSource": "tushare-sf-month",
+      "capabilities": [
+        "macro.tsf"
+      ],
+      "formats": [
+        "script"
+      ],
+      "auth": "none",
+      "priority": 1,
+      "status": "active",
+      "access": {
+        "tier": "credit",
+        "auth": "token",
+        "minPoints": 2000,
+        "secret": "runtime/secrets/tushare.json",
+        "env": [
+          "TUSHARE_TOKEN"
+        ],
+        "homepage": "https://tushare.pro",
+        "note": "可选积分源：需 Tushare token 且积分足够；免费用户请用免费源或上传 CSV",
+        "probe": {
+          "type": "tushare",
+          "api": "cn_m",
+          "params": {
+            "start_m": "202601",
+            "end_m": "202601"
+          },
+          "fields": "month,m1_yoy"
+        }
+      },
+      "structured": true
+    },
+    {
+      "id": "tushare-cn-m1",
+      "name": "tushare-cn-m1",
+      "configSource": "tushare-cn-m1",
+      "capabilities": [
+        "macro.m1_yoy"
+      ],
+      "formats": [
+        "script"
+      ],
+      "auth": "none",
+      "priority": 1,
+      "status": "active",
+      "structured": true,
+      "access": {
+        "tier": "credit",
+        "auth": "token",
+        "minPoints": 2000,
+        "secret": "runtime/secrets/tushare.json",
+        "env": [
+          "TUSHARE_TOKEN"
+        ],
+        "homepage": "https://tushare.pro",
+        "note": "可选积分源：需 Tushare token 且积分足够；免费用户请用免费源或上传 CSV",
+        "probe": {
+          "type": "tushare",
+          "api": "cn_m",
+          "params": {
+            "start_m": "202601",
+            "end_m": "202601"
+          },
+          "fields": "month,m1_yoy"
+        }
+      }
+    },
+    {
+      "id": "tushare-cn-m2",
+      "name": "tushare-cn-m2",
+      "configSource": "tushare-cn-m2",
+      "capabilities": [
+        "macro.m2_yoy"
+      ],
+      "formats": [
+        "script"
+      ],
+      "auth": "none",
+      "priority": 1,
+      "status": "active",
+      "structured": true,
+      "access": {
+        "tier": "credit",
+        "auth": "token",
+        "minPoints": 2000,
+        "secret": "runtime/secrets/tushare.json",
+        "env": [
+          "TUSHARE_TOKEN"
+        ],
+        "homepage": "https://tushare.pro",
+        "note": "可选积分源：需 Tushare token 且积分足够；免费用户请用免费源或上传 CSV",
+        "probe": {
+          "type": "tushare",
+          "api": "cn_m",
+          "params": {
+            "start_m": "202601",
+            "end_m": "202601"
+          },
+          "fields": "month,m1_yoy"
+        }
+      }
+    },
+    {
+      "id": "tushare-lpr",
+      "name": "tushare-lpr",
+      "configSource": "tushare-lpr",
+      "capabilities": [
+        "rates.lpr_1y"
+      ],
+      "formats": [
+        "script"
+      ],
+      "auth": "none",
+      "priority": 1,
+      "status": "active",
+      "structured": true,
+      "access": {
+        "tier": "credit",
+        "auth": "token",
+        "minPoints": 2000,
+        "secret": "runtime/secrets/tushare.json",
+        "env": [
+          "TUSHARE_TOKEN"
+        ],
+        "homepage": "https://tushare.pro",
+        "note": "可选积分源：需 Tushare token 且积分足够；免费用户请用免费源或上传 CSV",
+        "probe": {
+          "type": "tushare",
+          "api": "cn_m",
+          "params": {
+            "start_m": "202601",
+            "end_m": "202601"
+          },
+          "fields": "month,m1_yoy"
+        }
+      }
+    },
+    {
+      "id": "tushare-shibor",
+      "name": "tushare-shibor",
+      "configSource": "tushare-shibor",
+      "capabilities": [
+        "rates.shibor_1w"
+      ],
+      "formats": [
+        "script"
+      ],
+      "auth": "none",
+      "priority": 1,
+      "status": "active",
+      "structured": true,
+      "access": {
+        "tier": "credit",
+        "auth": "token",
+        "minPoints": 2000,
+        "secret": "runtime/secrets/tushare.json",
+        "env": [
+          "TUSHARE_TOKEN"
+        ],
+        "homepage": "https://tushare.pro",
+        "note": "可选积分源：需 Tushare token 且积分足够；免费用户请用免费源或上传 CSV",
+        "probe": {
+          "type": "tushare",
+          "api": "cn_m",
+          "params": {
+            "start_m": "202601",
+            "end_m": "202601"
+          },
+          "fields": "month,m1_yoy"
+        }
+      }
+    },
+    {
+      "id": "tushare-us10y",
+      "name": "tushare-us10y",
+      "configSource": "tushare-us10y",
+      "capabilities": [
+        "rates.us10y"
+      ],
+      "formats": [
+        "script"
+      ],
+      "auth": "none",
+      "priority": 1,
+      "status": "active",
+      "structured": true,
+      "access": {
+        "tier": "credit",
+        "auth": "token",
+        "minPoints": 2000,
+        "secret": "runtime/secrets/tushare.json",
+        "env": [
+          "TUSHARE_TOKEN"
+        ],
+        "homepage": "https://tushare.pro",
+        "note": "可选积分源：需 Tushare token 且积分足够；免费用户请用免费源或上传 CSV",
+        "probe": {
+          "type": "tushare",
+          "api": "cn_m",
+          "params": {
+            "start_m": "202601",
+            "end_m": "202601"
+          },
+          "fields": "month,m1_yoy"
+        }
+      }
+    },
+    {
+      "id": "tushare-repo7",
+      "name": "tushare-repo7",
+      "configSource": "tushare-repo7",
+      "capabilities": [
+        "rates.repo7"
+      ],
+      "formats": [
+        "script"
+      ],
+      "auth": "none",
+      "priority": 1,
+      "status": "active",
+      "structured": true,
+      "access": {
+        "tier": "credit",
+        "auth": "token",
+        "minPoints": 2000,
+        "secret": "runtime/secrets/tushare.json",
+        "env": [
+          "TUSHARE_TOKEN"
+        ],
+        "homepage": "https://tushare.pro",
+        "note": "可选积分源：需 Tushare token 且积分足够；免费用户请用免费源或上传 CSV",
+        "probe": {
+          "type": "tushare",
+          "api": "cn_m",
+          "params": {
+            "start_m": "202601",
+            "end_m": "202601"
+          },
+          "fields": "month,m1_yoy"
+        }
+      }
+    },
+    {
+      "id": "tushare-dr007",
+      "name": "DR007 银行间7天质押式回购",
+      "configSource": "tushare-dr007",
+      "capabilities": [
+        "macro.dr007"
+      ],
+      "formats": [
+        "script"
+      ],
+      "auth": "none",
+      "priority": 1,
+      "status": "active",
+      "structured": true,
+      "access": {
+        "tier": "credit",
+        "auth": "token",
+        "minPoints": 2000,
+        "secret": "runtime/secrets/tushare.json",
+        "env": [
+          "TUSHARE_TOKEN"
+        ],
+        "homepage": "https://tushare.pro",
+        "note": "可选积分源：需 Tushare token 且积分足够；免费用户请用免费源或上传 CSV",
+        "probe": {
+          "type": "tushare",
+          "api": "cn_m",
+          "params": {
+            "start_m": "202601",
+            "end_m": "202601"
+          },
+          "fields": "month,m1_yoy"
+        }
+      }
+    },
+    {
+      "id": "mofcom-tsf",
+      "name": "商务部 · 社会融资规模增量",
+      "configSource": "mofcom-tsf",
+      "capabilities": [
+        "macro.tsf"
+      ],
+      "formats": [
+        "script"
+      ],
+      "auth": "none",
+      "priority": 1,
+      "status": "active",
+      "structured": true,
+      "access": {
+        "tier": "free",
+        "auth": "none",
+        "homepage": "https://data.mofcom.gov.cn/gnmy/shrzgm.shtml",
+        "probe": {
+          "method": "POST",
+          "url": "https://data.mofcom.gov.cn/datamofcom/front/gnmy/shrzgmQuery",
+          "contains": "tiosfs"
+        }
+      }
+    },
+    {
+      "id": "eastmoney-money-m1",
+      "name": "东方财富 · M1 同比",
+      "configSource": "eastmoney-money-m1",
+      "capabilities": [
+        "macro.m1_yoy"
+      ],
+      "formats": [
+        "script"
+      ],
+      "auth": "none",
+      "priority": 1,
+      "status": "active",
+      "structured": true,
+      "access": {
+        "tier": "free",
+        "auth": "none",
+        "homepage": "https://data.eastmoney.com/cjsj/",
+        "probe": {
+          "url": "https://datacenter-web.eastmoney.com/api/data/v1/get?reportName=RPT_ECONOMY_CURRENCY_SUPPLY&columns=ALL&pageSize=1&sortColumns=REPORT_DATE&sortTypes=-1",
+          "contains": "BASIC_CURRENCY"
+        }
+      }
+    },
+    {
+      "id": "eastmoney-money-m2",
+      "name": "东方财富 · M2 同比",
+      "configSource": "eastmoney-money-m2",
+      "capabilities": [
+        "macro.m2_yoy"
+      ],
+      "formats": [
+        "script"
+      ],
+      "auth": "none",
+      "priority": 1,
+      "status": "active",
+      "structured": true,
+      "access": {
+        "tier": "free",
+        "auth": "none",
+        "homepage": "https://data.eastmoney.com/cjsj/",
+        "probe": {
+          "url": "https://datacenter-web.eastmoney.com/api/data/v1/get?reportName=RPT_ECONOMY_CURRENCY_SUPPLY&columns=ALL&pageSize=1&sortColumns=REPORT_DATE&sortTypes=-1",
+          "contains": "BASIC_CURRENCY"
+        }
+      }
+    },
+    {
+      "id": "eastmoney-lpr",
+      "name": "东方财富 · 1年期 LPR",
+      "configSource": "eastmoney-lpr",
+      "capabilities": [
+        "rates.lpr_1y"
+      ],
+      "formats": [
+        "script"
+      ],
+      "auth": "none",
+      "priority": 1,
+      "status": "active",
+      "structured": true,
+      "access": {
+        "tier": "free",
+        "auth": "none",
+        "homepage": "https://data.eastmoney.com/cjsj/globalRateLPR.html",
+        "probe": {
+          "url": "https://datacenter-web.eastmoney.com/api/data/v1/get?reportName=RPTA_WEB_RATE&columns=ALL&pageSize=1&sortColumns=TRADE_DATE&sortTypes=-1&token=894050c76af8597a853f5b408b759f5d",
+          "contains": "LPR1Y"
+        }
+      }
+    },
+    {
+      "id": "chinamoney-shibor-1w",
+      "name": "中国货币网 · SHIBOR 1W",
+      "configSource": "chinamoney-shibor-1w",
+      "capabilities": [
+        "rates.shibor_1w"
+      ],
+      "formats": [
+        "script"
+      ],
+      "auth": "none",
+      "priority": 1,
+      "status": "active",
+      "structured": true,
+      "access": {
+        "tier": "free",
+        "auth": "none",
+        "homepage": "https://www.chinamoney.com.cn/chinese/bkshibor/",
+        "probe": {
+          "method": "POST",
+          "url": "https://www.chinamoney.com.cn/ags/ms/cm-u-bk-shibor/ShiborHis?lang=CN",
+          "contains": "records"
+        }
+      }
+    },
+    {
+      "id": "fred-us10y",
+      "name": "FRED · 美国10年期国债收益率",
+      "configSource": "fred-us10y",
+      "capabilities": [
+        "rates.us10y"
+      ],
+      "formats": [
+        "script"
+      ],
+      "auth": "token",
+      "priority": 1,
+      "status": "active",
+      "structured": true,
+      "access": {
+        "tier": "free-key",
+        "auth": "token",
+        "secret": "runtime/secrets/fred.json",
+        "env": [
+          "FRED_API_KEY"
+        ],
+        "homepage": "https://fred.stlouisfed.org/docs/api/api_key.html",
+        "note": "FRED API key 免费申请；没有 key 时请上传 CSV",
+        "probe": {
+          "type": "fred",
+          "series": "DGS10"
+        }
+      }
+    }
+  ]
+}

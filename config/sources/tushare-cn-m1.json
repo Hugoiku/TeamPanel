@@ -1,0 +1,31 @@
+{
+  "id": "tushare-cn-m1",
+  "name": "M1 同比",
+  "category": "macro",
+  "kind": "script",
+  "runtime": "node",
+  "script": "scripts/tushare-series.js",
+  "args": [
+    "--api",
+    "cn_m",
+    "--range",
+    "{range}",
+    "--date-mode",
+    "monthly",
+    "--fields",
+    "month,m1_yoy",
+    "--period-field",
+    "month",
+    "--value-field",
+    "m1_yoy",
+    "--unit",
+    "%"
+  ],
+  "vars": {
+    "range": "2025-01..2026-10"
+  },
+  "force": true,
+  "tier": "market-api",
+  "evidenceField": "M1 同比",
+  "notes": "Tushare cn_m 通用序列；R007 不是 DR007，仅作代理。"
+}

@@ -1,0 +1,21 @@
+{
+  "label": "DDM",
+  "required": [
+    "dividend",
+    "requiredReturn"
+  ],
+  "fields": [
+    {
+      "key": "dividend",
+      "label": "每股股息",
+      "type": "number",
+      "unit": "元"
+    },
+    {
+      "key": "requiredReturn",
+      "label": "要求回报率",
+      "type": "percent",
+      "unit": ""
+    }
+  ]
+}

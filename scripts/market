@@ -1,0 +1,93 @@
+#!/usr/bin/env node
+/**
+ * market — 取数工具（新浪 + Tushare + 东财），员工用它在网上取真实数据。
+ * 原则：token 只从 runtime/secrets/tushare.json 读，永不打印；输出统一为 JSON，方便写 evidence。
+ *
+ *   node scripts/market quote --code 600519            # 新浪实时行情
+ *   node scripts/market tsu --api daily --params '{"ts_code":"600519.SH","start_date":"20261001"}' --fields ts_code,trade_date,close
+ *   node scripts/market tsu --api stock_basic --params '{"ts_code":"600519.SH"}'
+ *   node scripts/market cpi --limit 6                  # 东财 CPI
+ *   node scripts/market pmi --limit 6
+ */
+const https = require("https");
+const http = require("http");
+const fs = require("fs");
+const path = require("path");
+const ROOT = path.resolve(__dirname, "..");
+
+function arg(name, def) { const i = process.argv.indexOf("--" + name); return i >= 0 ? process.argv[i + 1] : def; }
+const CMD = process.argv[2];
+
+function token() {
+  const p = path.join(ROOT, "runtime/secrets/tushare.json");
+  if (!fs.existsSync(p)) throw new Error("未配置 Tushare token：把 token 写进 runtime/secrets/tushare.json（该目录已 gitignore）");
+  const j = JSON.parse(fs.readFileSync(p, "utf8"));
+  if (!j.token || String(j.token).indexOf("__") === 0) throw new Error("Tushare token 未填写");
+  return j.token;
+}
+
+function req(url, opts, body) {
+  return new Promise((resolve, reject) => {
+    const u = new URL(url);
+    const lib = u.protocol === "http:" ? http : https;
+    const r = lib.request({ hostname: u.hostname, port: u.port, path: u.pathname + u.search,
+      method: opts.method || "GET", headers: opts.headers || {} }, res => {
+      const chunks = [];
+      res.on("data", c => chunks.push(c));
+      res.on("end", () => resolve({ status: res.statusCode, buf: Buffer.concat(chunks), headers: res.headers }));
+    });
+    r.on("error", reject);
+    if (body) r.write(body);
+    r.end();
+  });
+}
+
+function text(buf, enc) {
+  try { return new TextDecoder(enc || "utf-8").decode(buf); } catch (_) { return buf.toString("utf8"); }
+}
+
+(async () => {
+  try {
+    if (CMD === "quote") {
+      const code = String(arg("code", "600519")).replace(/[^0-9]/g, "");
+      const prefix = code.indexOf("6") === 0 ? "sh" : "sz";
+      const r = await req("https://hq.sinajs.cn/list=" + prefix + code,
+        { headers: { referer: "https://finance.sina.com.cn", "user-agent": "Mozilla/5.0" } });
+      const t = text(r.buf, "gbk");
+      const m = t.match(/="(.*)"/);
+      if (!m) throw new Error("新浪返回无法解析：" + t.slice(0, 80));
+      const f = m[1].split(",");
+      console.log(JSON.stringify({ source: "sina-hq", url: "https://hq.sinajs.cn/list=" + prefix + code,
+        code, name: f[0], open: +f[1], prev_close: +f[2], price: +f[3], high: +f[4], low: +f[5],
+        date: f[30], time: f[31], raw_fields: f.length }, null, 1));
+      return;
+    }
+    if (CMD === "tsu") {
+      const api = arg("api", "daily");
+      const params = JSON.parse(arg("params", "{}"));
+      const fields = arg("fields", "");
+      const body = JSON.stringify({ api_name: api, token: token(), params, fields });
+      const r = await req("http://api.tushare.pro", { method: "POST",
+        headers: { "content-type": "application/json", "content-length": Buffer.byteLength(body) } }, body);
+      const j = JSON.parse(text(r.buf));
+      if (j.code !== 0) { console.log(JSON.stringify({ source: "tushare", api, error: j.msg, code: j.code })); process.exit(3); }
+      const out = { source: "tushare", api, fields: (j.data && j.data.fields) || [], items: (j.data && j.data.items) || [] };
+      console.log(JSON.stringify(out, null, 1));
+      return;
+    }
+    if (CMD === "cpi" || CMD === "pmi" || CMD === "ppi") {
+      const name = { cpi: "RPT_ECONOMY_CPI", pmi: "RPT_ECONOMY_PMI", ppi: "RPT_ECONOMY_PPI" }[CMD];
+      const limit = parseInt(arg("limit", "6"), 10);
+      const url = "https://datacenter-web.eastmoney.com/api/data/v1/get?reportName=" + name +
+        "&columns=ALL&pageSize=" + limit + "&sortColumns=REPORT_DATE&sortTypes=-1";
+      const r = await req(url, {});
+      console.log(JSON.stringify({ source: "eastmoney", report: name, url, data: JSON.parse(text(r.buf)) }, null, 1));
+      return;
+    }
+    console.error("usage: market <quote|tsu|cpi|pmi|ppi> [--code 600519] [--api daily] [--params JSON] [--fields a,b] [--limit 6]");
+    process.exit(1);
+  } catch (e) {
+    console.error(JSON.stringify({ ok: false, error: String(e && e.message || e) }));
+    process.exit(2);
+  }
+})();

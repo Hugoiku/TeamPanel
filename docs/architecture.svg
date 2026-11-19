@@ -1,0 +1,143 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1240" height="800" viewBox="0 0 1240 800" font-family="-apple-system,BlinkMacSystemFont,'PingFang SC','Helvetica Neue',sans-serif">
+  <defs>
+    <marker id="a" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 z" fill="#3d5a86"/></marker>
+    <marker id="ag" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 z" fill="#2f7a58"/></marker>
+    <linearGradient id="panelg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#111c2f"/><stop offset="1" stop-color="#0d1626"/></linearGradient>
+    <linearGradient id="brokerg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#152238"/><stop offset="1" stop-color="#0f1a2b"/></linearGradient>
+  </defs>
+  <rect width="1240" height="800" fill="#070b14"/>
+
+  <text x="40" y="38" fill="#e7eefb" font-size="15" font-weight="700">AlphaDesk · 总体架构</text>
+  <text x="40" y="56" fill="#5b6883" font-size="11">3 层：监督 / 协作 / 执行 · 一条铁律：Agent 不得直接写 vault，所有读写经 Broker 排队</text>
+
+  <!-- ============ 监督层 ============ -->
+  <rect x="40" y="78" width="1160" height="96" rx="12" fill="#0b1220" stroke="#182338" stroke-dasharray="4,4"/>
+  <text x="58" y="98" fill="#4c5a75" font-size="10" letter-spacing="1.5">监督层 · SUPERVISOR</text>
+
+  <rect x="60" y="108" width="270" height="56" rx="9" fill="url(#panelg)" stroke="#2a4064"/>
+  <text x="78" y="130" fill="#e7eefb" font-size="13" font-weight="650">你 · 最终看报告的人</text>
+  <text x="78" y="149" fill="#7f8da8" font-size="10.5">签字放行 / 强制释放锁 / 驳回门禁</text>
+
+  <rect x="380" y="108" width="330" height="56" rx="9" fill="url(#panelg)" stroke="#2a4064"/>
+  <text x="398" y="130" fill="#e7eefb" font-size="13" font-weight="650">监控面板 dashboard/mockup.html</text>
+  <text x="398" y="149" fill="#7f8da8" font-size="10.5">DAG · 员工卡 · 锁队列 · 甘特 · 事件流（只读投影）</text>
+
+  <rect x="790" y="108" width="390" height="56" rx="9" fill="#0d1a16" stroke="#245440"/>
+  <text x="808" y="130" fill="#a9f0c8" font-size="13" font-weight="650">状态唯一来源 = 事件账本</text>
+  <text x="808" y="149" fill="#6f9683" font-size="10.5">面板可回放历史，永不与真实状态漂移</text>
+
+  <line x1="330" y1="136" x2="372" y2="136" stroke="#3d5a86" stroke-width="1.4" marker-end="url(#a)"/>
+  <text x="336" y="128" fill="#5b6883" font-size="9.5">看</text>
+  <line x1="372" y1="126" x2="332" y2="126" stroke="#3d5a86" stroke-width="1.4" marker-end="url(#a)"/>
+  <text x="336" y="120" fill="#5b6883" font-size="9.5">干预</text>
+
+  <!-- 面板 <- 账本 -->
+  <path d="M985 168 V 190 H 545 V 172" fill="none" stroke="#2f7a58" stroke-width="1.4" marker-end="url(#ag)"/>
+  <text x="720" y="185" fill="#4f8f74" font-size="9.5">SSE 增量事件投影</text>
+
+  <!-- ============ 协作层 Broker ============ -->
+  <rect x="40" y="200" width="1160" height="188" rx="12" fill="url(#brokerg)" stroke="#2b4468"/>
+  <text x="58" y="221" fill="#7fa6da" font-size="11" font-weight="650" letter-spacing="1">协作层 · BROKER（单进程 · 唯一写入口 · 零依赖）</text>
+
+  <rect x="62" y="236" width="258" height="120" rx="9" fill="#0d1728" stroke="#26405f"/>
+  <text x="78" y="258" fill="#cfe0f7" font-size="12" font-weight="650">锁队列</text>
+  <text x="78" y="278" fill="#8fa3bd" font-size="10.5">严格 FIFO · 读共享 / 写独占</text>
+  <text x="78" y="295" fill="#8fa3bd" font-size="10.5">写优先防饥饿 · 租约 60s + 续约</text>
+  <text x="78" y="312" fill="#8fa3bd" font-size="10.5">到期自动回收 · 无嵌套持锁</text>
+  <text x="78" y="334" fill="#ffb340" font-size="10">→ 面板：队位 / 已等时长 / 剩余租约</text>
+
+  <rect x="340" y="236" width="258" height="120" rx="9" fill="#0d1728" stroke="#26405f"/>
+  <text x="356" y="258" fill="#cfe0f7" font-size="12" font-weight="650">版本仓库</text>
+  <text x="356" y="278" fill="#8fa3bd" font-size="10.5">每次写入 → 新版本 v(N) + sha256</text>
+  <text x="356" y="295" fill="#8fa3bd" font-size="10.5">expected_version 做 CAS</text>
+  <text x="356" y="312" fill="#8fa3bd" font-size="10.5">旧版本留 history/，可 diff / 回滚</text>
+  <text x="356" y="334" fill="#ffb340" font-size="10">→ 冲突即 409，Agent 重读合并重试</text>
+
+  <rect x="618" y="236" width="258" height="120" rx="9" fill="#0d1728" stroke="#26405f"/>
+  <text x="634" y="258" fill="#cfe0f7" font-size="12" font-weight="650">门禁引擎</text>
+  <text x="634" y="278" fill="#8fa3bd" font-size="10.5">G-DATA / G-AUDIT / G-LEGAL / G-SIGN</text>
+  <text x="634" y="295" fill="#8fa3bd" font-size="10.5">校验结构化 JSON 判定，不采信自述</text>
+  <text x="634" y="312" fill="#8fa3bd" font-size="10.5">失败 → 退回作者，上限 3 轮</text>
+  <text x="634" y="334" fill="#ff5f6d" font-size="10">→ 审计不通过，报告不得发布</text>
+
+  <rect x="896" y="236" width="282" height="120" rx="9" fill="#0d1728" stroke="#26405f"/>
+  <text x="912" y="258" fill="#cfe0f7" font-size="12" font-weight="650">事件账本</text>
+  <text x="912" y="278" fill="#8fa3bd" font-size="10.5">runtime/ledger/events.jsonl 追加写</text>
+  <text x="912" y="295" fill="#8fa3bd" font-size="10.5">seq / ts / type / actor / payload</text>
+  <text x="912" y="312" fill="#8fa3bd" font-size="10.5">重启重放即可重建锁表与面板</text>
+  <text x="912" y="334" fill="#37d67a" font-size="10">→ 面板是 fold(events)，非日志查看器</text>
+
+  <!-- ============ 执行层 ============ -->
+  <rect x="40" y="430" width="1160" height="170" rx="12" fill="#0b1220" stroke="#182338" stroke-dasharray="4,4"/>
+  <text x="58" y="450" fill="#4c5a75" font-size="10" letter-spacing="1.5">执行层 · 6 名 AGENT（DSH teammates，共享同一文件系统）</text>
+
+  <rect x="60" y="468" width="150" height="52" rx="8" fill="#101a2b" stroke="#2a4064"/>
+  <text x="74" y="489" fill="#dbe7f7" font-size="11.5" font-weight="650">宏观研究员</text>
+  <text x="74" y="505" fill="#6f7f99" font-size="9.5">research/macro.md</text>
+
+  <rect x="248" y="468" width="150" height="52" rx="8" fill="#101a2b" stroke="#2a4064"/>
+  <text x="262" y="489" fill="#dbe7f7" font-size="11.5" font-weight="650">行业研究员</text>
+  <text x="262" y="505" fill="#6f7f99" font-size="9.5">research/industry.md</text>
+
+  <rect x="436" y="468" width="150" height="52" rx="8" fill="#101a2b" stroke="#2a4064"/>
+  <text x="450" y="489" fill="#dbe7f7" font-size="11.5" font-weight="650">个股研究员</text>
+  <text x="450" y="505" fill="#6f7f99" font-size="9.5">research/stock.md</text>
+
+  <rect x="624" y="458" width="150" height="46" rx="8" fill="#131a2b" stroke="#3a3357"/>
+  <text x="638" y="477" fill="#d8cdf7" font-size="11.5" font-weight="650">法律顾问 ◆</text>
+  <text x="638" y="493" fill="#6f7f99" font-size="9.5">review/legal.md</text>
+
+  <rect x="624" y="512" width="150" height="46" rx="8" fill="#131a2b" stroke="#3a3357"/>
+  <text x="638" y="531" fill="#d8cdf7" font-size="11.5" font-weight="650">信息审计 ◆</text>
+  <text x="638" y="547" fill="#6f7f99" font-size="9.5">review/audit.md + sources</text>
+
+  <rect x="812" y="468" width="150" height="52" rx="8" fill="#131a2b" stroke="#3a3357"/>
+  <text x="826" y="489" fill="#d8cdf7" font-size="11.5" font-weight="650">交易员 ◆</text>
+  <text x="826" y="505" fill="#6f7f99" font-size="9.5">trade/plan.md</text>
+
+  <rect x="1000" y="468" width="150" height="52" rx="8" fill="#0d1a16" stroke="#2b6b4c"/>
+  <text x="1014" y="489" fill="#a9f0c8" font-size="11.5" font-weight="650">最终报告</text>
+  <text x="1014" y="505" fill="#6f9683" font-size="9.5">final_report.md</text>
+
+  <line x1="210" y1="494" x2="240" y2="494" stroke="#3d5a86" stroke-width="1.3" marker-end="url(#a)"/>
+  <line x1="398" y1="494" x2="428" y2="494" stroke="#3d5a86" stroke-width="1.3" marker-end="url(#a)"/>
+  <line x1="586" y1="494" x2="616" y2="494" stroke="#3d5a86" stroke-width="1.3" marker-end="url(#a)"/>
+  <line x1="774" y1="480" x2="804" y2="492" stroke="#3d5a86" stroke-width="1.3" marker-end="url(#a)"/>
+  <line x1="774" y1="528" x2="804" y2="500" stroke="#3d5a86" stroke-width="1.3" marker-end="url(#a)"/>
+  <line x1="962" y1="494" x2="992" y2="494" stroke="#3d5a86" stroke-width="1.3" marker-end="url(#a)"/>
+
+  <text x="824" y="540" fill="#6f7f99" font-size="9.5">◆ 高级配置，按需启用；并行读同一批底稿</text>
+
+  <!-- agents -> broker -->
+  <path d="M 1160 430 V 404 L 100 404 V 396" fill="none" stroke="#3d5a86" stroke-width="1.4" marker-end="url(#a)"/>
+  <text x="360" y="420" fill="#7fa6da" font-size="9.5">desk acquire / read / write / release（带 request_id，幂等）</text>
+
+  <!-- ============ 存储层 ============ -->
+  <rect x="40" y="628" width="1160" height="130" rx="12" fill="#0b1220" stroke="#182338" stroke-dasharray="4,4"/>
+  <text x="58" y="648" fill="#4c5a75" font-size="10" letter-spacing="1.5">存储层 · 全部是可读文本，可 diff / 可回滚 / 可对账</text>
+
+  <rect x="60" y="662" width="250" height="78" rx="8" fill="#0d1728" stroke="#26405f"/>
+  <text x="74" y="682" fill="#cfe0f7" font-size="11.5" font-weight="650">vault/&lt;case&gt;/</text>
+  <text x="74" y="699" fill="#8fa3bd" font-size="9.5">权威共享文件区（Broker 才能写）</text>
+  <text x="74" y="715" fill="#5b6883" font-size="9.5">research/ review/ trade/ evidence/</text>
+
+  <rect x="326" y="662" width="230" height="78" rx="8" fill="#0d1728" stroke="#26405f"/>
+  <text x="340" y="682" fill="#cfe0f7" font-size="11.5" font-weight="650">history/</text>
+  <text x="340" y="699" fill="#8fa3bd" font-size="9.5">按 sha256 存放的旧版本</text>
+  <text x="340" y="715" fill="#5b6883" font-size="9.5">支持回滚与时间轴回放</text>
+
+  <rect x="572" y="662" width="250" height="78" rx="8" fill="#0d1728" stroke="#26405f"/>
+  <text x="586" y="682" fill="#cfe0f7" font-size="11.5" font-weight="650">runtime/</text>
+  <text x="586" y="699" fill="#8fa3bd" font-size="9.5">ledger/events.jsonl + locks/state.json</text>
+  <text x="586" y="715" fill="#5b6883" font-size="9.5">账本是真相，状态可重建</text>
+
+  <rect x="838" y="662" width="340" height="78" rx="8" fill="#0d1728" stroke="#26405f"/>
+  <text x="852" y="682" fill="#cfe0f7" font-size="11.5" font-weight="650">agents/&lt;role&gt;/ROLE.md</text>
+  <text x="852" y="699" fill="#8fa3bd" font-size="9.5">角色卡：职责 / 输入 / 输出 schema / 禁止事项</text>
+  <text x="852" y="715" fill="#5b6883" font-size="9.5">teammate 的上下文从这里装载</text>
+
+  <path d="M 200 388 V 656" fill="none" stroke="#2f7a58" stroke-width="1.4" marker-end="url(#ag)" stroke-dasharray="5,3"/>
+  <text x="210" y="616" fill="#4f8f74" font-size="9.5">唯一落盘路径</text>
+
+  <text x="40" y="782" fill="#3f4b63" font-size="9.5">v0.1 设计稿 · 面板原型见 dashboard/mockup.html · 数据均为模拟</text>
+</svg>

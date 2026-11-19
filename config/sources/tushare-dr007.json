@@ -1,0 +1,35 @@
+{
+  "id": "tushare-dr007",
+  "name": "DR007 银行间7天质押式回购",
+  "category": "macro",
+  "kind": "script",
+  "runtime": "node",
+  "script": "scripts/tushare-series.js",
+  "args": [
+    "--api",
+    "repo_daily",
+    "--range",
+    "{range}",
+    "--date-mode",
+    "daily",
+    "--fields",
+    "trade_date,repo_maturity,close",
+    "--period-field",
+    "trade_date",
+    "--value-field",
+    "close",
+    "--unit",
+    "%",
+    "--filter-field",
+    "repo_maturity",
+    "--filter-value",
+    "DR007"
+  ],
+  "vars": {
+    "range": "2026-01..2026-11"
+  },
+  "force": true,
+  "tier": "market-api",
+  "evidenceField": "DR007 银行间7天质押式回购",
+  "notes": "Tushare repo_daily，repo_maturity=DR007.IB。"
+}

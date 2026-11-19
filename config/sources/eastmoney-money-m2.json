@@ -1,0 +1,31 @@
+{
+  "id": "eastmoney-money-m2",
+  "name": "东方财富 · M2 同比",
+  "category": "macro",
+  "kind": "script",
+  "runtime": "node",
+  "script": "scripts/eastmoney-series.js",
+  "args": [
+    "--report",
+    "RPT_ECONOMY_CURRENCY_SUPPLY",
+    "--range",
+    "{range}",
+    "--date-mode",
+    "monthly",
+    "--period-field",
+    "REPORT_DATE",
+    "--value-field",
+    "BASIC_CURRENCY_SAME",
+    "--unit",
+    "%",
+    "--sort-column",
+    "REPORT_DATE"
+  ],
+  "vars": {
+    "range": "2025-01..2026-11"
+  },
+  "force": true,
+  "tier": "market-api",
+  "evidenceField": "M2 同比",
+  "notes": "免费公开；东方财富数据中心货币供应量。"
+}

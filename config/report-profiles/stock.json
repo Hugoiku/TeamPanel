@@ -1,0 +1,12 @@
+{
+  "type": "stock",
+  "label": "个股报告",
+  "sections": [
+    "summary",
+    "company",
+    "risks",
+    "metrics",
+    "figures",
+    "appendix"
+  ]
+}

@@ -1,0 +1,277 @@
+{
+  "brand": "HugoTeam",
+  "language": "zh",
+  "server": {
+    "port": 7801,
+    "host": "127.0.0.1"
+  },
+  "agents": [
+    {
+      "id": "macro",
+      "name": "宏观研究员",
+      "glyph": "宏",
+      "tier": "base",
+      "role": "agents/macro/ROLE.md"
+    },
+    {
+      "id": "industry",
+      "name": "行业研究员",
+      "glyph": "行",
+      "tier": "base",
+      "role": "agents/industry/ROLE.md"
+    },
+    {
+      "id": "stock",
+      "name": "个股研究员",
+      "glyph": "股",
+      "tier": "base",
+      "role": "agents/stock/ROLE.md"
+    },
+    {
+      "id": "audit",
+      "name": "信息审计",
+      "glyph": "审",
+      "tier": "advanced",
+      "role": "agents/audit/ROLE.md"
+    },
+    {
+      "id": "legal",
+      "name": "法律顾问",
+      "glyph": "法",
+      "tier": "advanced",
+      "role": "agents/legal/ROLE.md"
+    },
+    {
+      "id": "trader",
+      "name": "交易员",
+      "glyph": "交",
+      "tier": "advanced",
+      "role": "agents/trader/ROLE.md"
+    },
+    {
+      "id": "lead",
+      "name": "Lead · 汇编",
+      "glyph": "L",
+      "tier": "system",
+      "role": "agents/lead/ROLE.md"
+    }
+  ],
+  "case": {
+    "roles": [
+      "macro",
+      "industry",
+      "stock",
+      "audit",
+      "legal",
+      "trader"
+    ],
+    "audience": "内部研究",
+    "horizon": "6~12 个月"
+  },
+  "models": {
+    "default": {
+      "provider": "opencode-go",
+      "model": "deepseek-v4.1-flash"
+    },
+    "catalog": [
+      {
+        "id": "opencode-go/deepseek-v4.1-flash",
+        "provider": "opencode-go",
+        "model": "deepseek-v4.1-flash",
+        "label": "DeepSeek V4.1 Flash",
+        "ctx": 128000,
+        "tag": "默认 · 快",
+        "builtin": true,
+        "verified": true
+      }
+    ],
+    "planner": {
+      "default": {
+        "provider": "opencode-go",
+        "model": "deepseek-v4.1-flash",
+        "effort": "high"
+      },
+      "byAgent": {}
+    },
+    "routes": {
+      "fast": {
+        "provider": "opencode-go",
+        "model": "deepseek-v4.1-flash",
+        "effort": "high"
+      },
+      "strong": {
+        "provider": "opencode-go",
+        "model": "deepseek-v4.1-flash",
+        "effort": "high"
+      },
+      "verify": {
+        "provider": "opencode-go",
+        "model": "deepseek-v4.1-flash",
+        "effort": "high"
+      }
+    },
+    "semantic": {
+      "provider": "opencode-go",
+      "model": "glm-5.3-flash"
+    }
+  },
+  "skills": {
+    "dir": "skills",
+    "assign": {
+      "macro": [
+        "macro-method",
+        "chart-render",
+        "data-access",
+        "data-collect",
+        "data-collect-macro-cn",
+        "macro-report",
+        "hithink-finance",
+        "web-data-intake",
+        "shared-report",
+        "data-intake",
+        "lieflat-less-ai-tone"
+      ],
+      "industry": [
+        "industry-method",
+        "office-xlsx",
+        "data-access",
+        "data-collect",
+        "data-collect-macro-cn",
+        "hithink-finance",
+        "web-data-intake",
+        "shared-report",
+        "data-intake",
+        "lieflat-less-ai-tone"
+      ],
+      "stock": [
+        "valuation-dcf",
+        "office-xlsx",
+        "data-access",
+        "data-collect",
+        "data-collect-macro-cn",
+        "hithink-finance",
+        "web-data-intake",
+        "shared-report",
+        "data-intake",
+        "lieflat-less-ai-tone"
+      ],
+      "audit": [
+        "citation-check",
+        "sample-audit",
+        "data-collect",
+        "web-data-intake",
+        "shared-report",
+        "data-intake",
+        "lieflat-less-ai-tone"
+      ],
+      "legal": [
+        "compliance-cn",
+        "data-collect",
+        "web-data-intake",
+        "shared-report",
+        "data-intake"
+      ],
+      "trader": [
+        "office-xlsx",
+        "data-access",
+        "data-collect",
+        "hithink-finance",
+        "web-data-intake",
+        "data-intake"
+      ]
+    }
+  },
+  "dsh": {
+    "bin": null
+  },
+  "memory": {
+    "checkpointPct": 0.8,
+    "indexDir": "runtime/memory",
+    "stateDir": "runtime/memory",
+    "topK": 5
+  },
+  "policy": {
+    "planApprovalRoles": [
+      "macro",
+      "industry",
+      "stock"
+    ],
+    "maxConflictRounds": 2
+  },
+  "planning": {
+    "mode": {
+      "macro": "guided",
+      "industry": "guided",
+      "stock": "guided",
+      "audit": "fixed",
+      "legal": "fixed",
+      "trader": "fixed"
+    },
+    "semanticDedupe": true
+  },
+  "collect": {
+    "enabled": true,
+    "respectRobots": false,
+    "delayMs": 1200,
+    "timeoutMs": 30000,
+    "maxBytes": 8388608,
+    "cacheDir": "runtime/cache/collect",
+    "autoNeed": true,
+    "quotas": {
+      "perAgent": {
+        "maxRequestsPerRun": 60,
+        "maxBytesPerRun": 52428800
+      },
+      "allowedDomains": []
+    },
+    "forceDefault": true
+  },
+  "watchdog": {
+    "enabled": true,
+    "intervalMs": 2000,
+    "stepTimeoutMs": 1800000,
+    "runTimeoutMs": 1800000,
+    "workHeartbeatMs": 180000,
+    "maxAttempts": 3,
+    "backoffMs": 5000,
+    "pauseOnExhausted": false,
+    "progressTimeoutMs": 600000,
+    "progressCooldownMs": 900000,
+    "progressHardTimeoutMs": 1500000,
+    "progressRequeueOnHard": false
+  },
+  "scheduler": {
+    "autoRun": true,
+    "maxConcurrency": 4,
+    "leaseMs": 180000,
+    "heartbeatMs": 15000,
+    "wallMsByTier": { "fast": 600000, "strong": 2700000, "verify": 2700000 },
+    "conflictCheck": true,
+    "defaultMode": "parallel",
+    "maxConcurrencyCap": 4,
+    "perEmployeeConcurrency": 2,
+    "useAgentLoop": true,
+    "agentLoopRuntime": "dsh",
+    "legacyTaskApi": false
+  },
+  "budgets": {
+    "maxTokensPerCase": 0,
+    "maxChildTokensPerParent": 1000000,
+    "defaultWorkReserve": 60000,
+    "reservationTtlMs": 1800000
+  },
+  "autonomy": {
+    "mode": "supervised"
+  },
+  "features": {
+    "simpleMode": true,
+    "concurrency": true,
+    "router": true,
+    "watchdogActions": true,
+    "demoMode": true
+  },
+  "crossReview": {
+    "semantic": false,
+    "note": "语义审阅较慢；设为 true 后正式报告前启用"
+  }
+}

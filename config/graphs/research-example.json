@@ -1,0 +1,61 @@
+{
+  "id": "research-v1",
+  "start": "fetch",
+  "limits": {
+    "maxSteps": 80,
+    "maxVisitsPerNode": 20,
+    "maxEdgeTraversals": 60,
+    "maxRepeatedState": 3,
+    "maxDurationMs": 1800000
+  },
+  "nodes": [
+    {
+      "id": "fetch",
+      "type": "fetch"
+    },
+    {
+      "id": "gate",
+      "type": "gate"
+    },
+    {
+      "id": "data",
+      "type": "data"
+    },
+    {
+      "id": "report",
+      "type": "report"
+    },
+    {
+      "id": "approval",
+      "type": "approval"
+    }
+  ],
+  "edges": [
+    {
+      "from": "fetch",
+      "to": "gate"
+    },
+    {
+      "from": "gate",
+      "to": "report",
+      "when": {
+        "path": "coverage.ge.spot",
+        "op": ">=",
+        "value": 95
+      }
+    },
+    {
+      "from": "gate",
+      "to": "data",
+      "default": true
+    },
+    {
+      "from": "data",
+      "to": "gate"
+    },
+    {
+      "from": "report",
+      "to": "approval"
+    }
+  ]
+}

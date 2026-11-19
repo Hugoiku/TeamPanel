@@ -1,0 +1,25 @@
+{
+  "id": "fred-us10y",
+  "name": "FRED · 美国10年期国债收益率",
+  "category": "macro",
+  "kind": "script",
+  "runtime": "node",
+  "script": "scripts/fred-series.js",
+  "args": [
+    "--series",
+    "DGS10",
+    "--range",
+    "{range}",
+    "--date-mode",
+    "daily",
+    "--unit",
+    "%"
+  ],
+  "vars": {
+    "range": "2025-01..2026-11"
+  },
+  "force": true,
+  "tier": "official",
+  "evidenceField": "美国10年期国债收益率（FRED DGS10）",
+  "notes": "免费但需免费 API key：FRED_API_KEY 或 runtime/secrets/fred.json；无 key 时改用上传 CSV。"
+}

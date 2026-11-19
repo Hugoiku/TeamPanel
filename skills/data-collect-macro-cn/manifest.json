@@ -1,0 +1,72 @@
+{
+  "id": "data-collect-macro-cn",
+  "name": "宏观数据采集包（中国/国际）",
+  "version": "1.0.0",
+  "description": "宏观/行业研究常用数据采集：东财宏观 API、Tushare、统计局发布页、财政部、中债、DXY、波动率、USGS。",
+  "author": "AlphaDesk",
+  "license": "MIT",
+  "requires": {
+    "python": [
+      "pdfplumber",
+      "pymupdf",
+      "trafilatura"
+    ],
+    "node": [],
+    "env": [
+      "TUSHARE_TOKEN"
+    ],
+    "optional": [
+      "playwright-chromium",
+      "tesseract"
+    ]
+  },
+  "assign": [
+    "macro",
+    "industry",
+    "stock"
+  ],
+  "commands": [
+    "collect source",
+    "collect get",
+    "collect pdf",
+    "collect table"
+  ],
+  "sources": [
+    "eastmoney-cpi",
+    "eastmoney-ppi",
+    "eastmoney-pmi",
+    "eastmoney-gdp",
+    "eastmoney-quote",
+    "eastmoney-dxy",
+    "tushare-api",
+    "tushare-pmi-detail",
+    "stats-release",
+    "stats-industrial",
+    "stats-core-cpi",
+    "stats-real-estate",
+    "mof-release",
+    "mof-fiscal",
+    "chinabond-10y",
+    "csi300-vol",
+    "usgs-germanium",
+    "pbc-home",
+    "mofcom-home",
+    "cninfo-home"
+  ],
+  "scripts": [
+    "collect.js",
+    "extract.js",
+    "pmi_detail.js",
+    "tushare_any.js",
+    "stats_release.py",
+    "vol.js",
+    "chinabond.py",
+    "web_table.py",
+    "ocr.py"
+  ],
+  "smoke": [
+    "node scripts/collect.js source eastmoney-cpi --out runtime/cache/collect/smoke-cpi.json",
+    "node scripts/collect.js source tushare-api --var api=cn_cpi"
+  ],
+  "notes": "stats-release 支持 --var keyword=...；tushare-api 支持 --var api=cn_cpi 等；chinabond 取当前 10Y 曲线。"
+}

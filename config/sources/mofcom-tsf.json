@@ -1,0 +1,19 @@
+{
+  "id": "mofcom-tsf",
+  "name": "商务部 · 社会融资规模增量",
+  "category": "macro",
+  "kind": "script",
+  "runtime": "node",
+  "script": "scripts/mofcom-tsf.js",
+  "args": [
+    "--range",
+    "{range}"
+  ],
+  "vars": {
+    "range": "2025-01..2026-11"
+  },
+  "force": true,
+  "tier": "official",
+  "evidenceField": "社会融资规模增量（商务部数据中心）",
+  "notes": "免费公开，无需 token/积分；data.mofcom.gov.cn/datamofcom/front/gnmy/shrzgmQuery。"
+}

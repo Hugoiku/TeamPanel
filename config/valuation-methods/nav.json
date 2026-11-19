@@ -1,0 +1,28 @@
+{
+  "label": "NAV",
+  "required": [
+    "assets",
+    "liabilities",
+    "shares"
+  ],
+  "fields": [
+    {
+      "key": "assets",
+      "label": "资产价值",
+      "type": "number",
+      "unit": "亿元"
+    },
+    {
+      "key": "liabilities",
+      "label": "负债",
+      "type": "number",
+      "unit": "亿元"
+    },
+    {
+      "key": "shares",
+      "label": "股本",
+      "type": "number",
+      "unit": "亿股"
+    }
+  ]
+}

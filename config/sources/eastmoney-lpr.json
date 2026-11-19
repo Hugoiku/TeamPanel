@@ -1,0 +1,33 @@
+{
+  "id": "eastmoney-lpr",
+  "name": "东方财富 · 1年期 LPR",
+  "category": "macro",
+  "kind": "script",
+  "runtime": "node",
+  "script": "scripts/eastmoney-series.js",
+  "args": [
+    "--report",
+    "RPTA_WEB_RATE",
+    "--range",
+    "{range}",
+    "--date-mode",
+    "daily",
+    "--period-field",
+    "TRADE_DATE",
+    "--value-field",
+    "LPR1Y",
+    "--unit",
+    "%",
+    "--sort-column",
+    "TRADE_DATE",
+    "--extra",
+    "{\"token\":\"894050c76af8597a853f5b408b759f5d\"}"
+  ],
+  "vars": {
+    "range": "2025-01..2026-11"
+  },
+  "force": true,
+  "tier": "market-api",
+  "evidenceField": "1年期 LPR",
+  "notes": "免费公开；东方财富数据中心 LPR 品种数据。"
+}

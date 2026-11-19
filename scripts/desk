@@ -1,0 +1,339 @@
+#!/usr/bin/env node
+/**
+ * desk — Agent 侧唯一的读写入口（M1）
+ * 所有操作走 Broker，Agent 不直接碰 vault。
+ *
+ *   desk acquire --case c --path research/x.md --mode write --note "写v2" [--ttl 120] [--wait 30]
+ *   desk read    --case c --path research/x.md [--lock L7]
+ *   desk write   --case c --path research/x.md --lock L7 --expected-version 3 --file /tmp/x.md
+ *   desk release --lock L7
+ *   desk renew   --lock L7
+ *   desk gate    --case c --gate G-DATA --status pass --note "..."
+ *   desk status  [--case c]
+ *   desk events  --since 12
+ *   desk peek    --case c --path research/x.md
+ *   desk cat     --case c --path research/x.md            # 同 peek，不加锁
+ *   desk task    --case c --agent macro --text "..."      # 派活（写 task.assigned）
+ *   desk task    --done --case c --agent macro --summary "..." [--deliverable research/macro.md]
+ *   desk task    --list --case c                          # 看全部派活与交付状态
+ *   desk model   --case c --model deepseek-v4.1-flash     # 上报本员工实际运行模型
+ *   desk search  --q "批价"                             # 全库检索：返回 路径+版本+摘要（不读全文，省 token）
+ *   desk kb      --put --title "白酒批价跟踪" --file x.md --tags 行业,价格 --source "渠道调研"
+ *   desk kb      --search --q "批价"                      # 在自己的 Wiki 库里找
+ *   desk kb      --list | --get --slug <slug>              # 我的知识库页面
+ *   desk review  --list                                   # 我的复核队列（audit/legal）
+ *   desk review  --request --service audit --path research/stock.md --criteria "数字与来源"
+ *   desk review  --verdict --id R1 --result pass|conditional|fail --finding "缺 X" --finding "缺 Y"
+ *   desk review  --waive --id R1                          # 监督者豁免（接受风险）
+ *   desk need    --kind data --title "缺近 8 季营收" --detail "..."   # 主动提问/申请，写入 need.requested
+ *   desk need    --list                                   # 看自己提过的问题和答复
+ *   desk upload  --file ./x.pdf                           # 监督者上传附件到 vault/uploads/
+ *   desk model   --check --case c                         # 核对"配置 vs 实际"，不一致退出码 5
+ *
+ * 输出：一行 JSON（便于 Agent 解析）。退出码：0 成功 / 2 排队超时 / 3 版本冲突 / 4 无权限 / 5 模型配置与实际不符 / 1 其他错误
+ */
+"use strict";
+const http = require("http");
+const fs = require("fs");
+
+const BROKER = process.env.DESK_BROKER || "http://127.0.0.1:7801";
+
+function parse(argv) {
+  const out = {};
+  for (let i = 0; i < argv.length; i++) {
+    const a = argv[i];
+    if (a.startsWith("--")) {
+      const k = a.slice(2);
+      const nxt = argv[i + 1];
+      if (nxt === undefined || nxt.startsWith("--")) { out[k] = true; }
+      else if (k === "deliverable") { (out.deliverables = out.deliverables || []).push(nxt); i++; }
+      else { out[k] = nxt; i++; }
+    } else { out._ = out._ || []; out._.push(a); }
+  }
+  return out;
+}
+const CMD = process.argv[2];
+const O = parse(process.argv.slice(3));
+// 员工进程里由 runner 注入：desk 自动带上 case / actor，命令里不用重复写
+if (!O.case && process.env.DESK_CASE) O.case = process.env.DESK_CASE;
+if (!O.actor && process.env.DESK_ACTOR) O.actor = process.env.DESK_ACTOR;
+
+function api(method, path, body) {
+  return new Promise((resolve, reject) => {
+    const u = new URL(BROKER + path);
+    const payload = body ? JSON.stringify(body) : null;
+    const req = http.request({ hostname: u.hostname, port: u.port, path: u.pathname + u.search,
+      method, headers: payload ? { "content-type": "application/json",
+        "content-length": Buffer.byteLength(payload) } : {} }, res => {
+      let data = "";
+      res.on("data", c => data += c);
+      res.on("end", () => {
+        let parsed = {};
+        try { parsed = data ? JSON.parse(data) : {}; } catch (_) { parsed = { raw: data }; }
+        resolve({ status: res.statusCode, body: parsed });
+      });
+    });
+    req.on("error", reject);
+    if (payload) req.write(payload);
+    req.end();
+  });
+}
+
+function out(code, obj) {
+  process.stdout.write(JSON.stringify(obj) + "\n");
+  process.exit(code);
+}
+function fail(code, msg, extra) { out(code, Object.assign({ ok: false, error: msg }, extra || {})); }
+
+async function main() {
+  switch (CMD) {
+    case "acquire": {
+      const r = await api("POST", "/api/lock", {
+        case: O.case || "default", path: O.path, actor: O.actor || process.env.DESK_ACTOR || "agent",
+        mode: (O.mode === "read" || O.mode === "R") ? "R" : "W",
+        note: O.note || "", ttl: parseInt(O.ttl || "120", 10),
+        waitMs: Math.round(parseFloat(O.wait || "30") * 1000)
+      });
+      if (r.status === 200) out(0, { ok: true, lock: r.body.lock, waitedMs: r.body.waitedMs });
+      if (r.status === 202) out(2, { ok: false, queued: true, position: r.body.position,
+        queueLength: r.body.queueLength, hint: "未拿到锁，稍后重试" });
+      fail(1, r.body.error || ("http " + r.status));
+      break;
+    }
+    case "release": {
+      const r = await api("DELETE", "/api/lock/" + encodeURIComponent(O.lock));
+      if (r.status === 200) out(0, { ok: true, released: true });
+      fail(1, r.body.error || ("http " + r.status));
+      break;
+    }
+    case "renew": {
+      const r = await api("POST", "/api/lock/" + encodeURIComponent(O.lock) + "/renew", { ttl: parseInt(O.ttl || "120", 10) });
+      if (r.status === 200) out(0, { ok: true, lock: r.body.lock });
+      fail(1, r.body.error || ("http " + r.status));
+      break;
+    }
+    case "cat": case "peek": case "read": {
+      const r = await api("GET", "/api/file?case=" + encodeURIComponent(O.case || "default") +
+        "&path=" + encodeURIComponent(O.path) +
+        "&actor=" + encodeURIComponent(O.actor || process.env.DESK_ACTOR || "agent"));
+      if (r.status !== 200) fail(1, r.body.error || ("http " + r.status));
+      if (CMD === "cat" || CMD === "peek") out(0, { ok: true, version: r.body.version, exists: r.body.exists, content: r.body.content });
+      out(0, { ok: true, version: r.body.version, content: r.body.content, holders: r.body.holders });
+      break;
+    }
+    case "write": {
+      let content = O.content;
+      if (content === undefined) {
+        if (O.file) content = fs.readFileSync(O.file, "utf8");
+        else if (!process.stdin.isTTY) content = fs.readFileSync(0, "utf8");
+        else fail(1, "需要 --file 或 --content 或 stdin");
+      }
+      const r = await api("PUT", "/api/file", {
+        case: O.case || "default", path: O.path, lock: O.lock,
+        expectedVersion: O["expected-version"] !== undefined ? parseInt(O["expected-version"], 10) : undefined,
+        content, note: O.note || ""
+      });
+      if (r.status === 200) out(0, { ok: true, version: r.body.version, sha: r.body.sha, bytes: r.body.bytes });
+      if (r.status === 409) out(3, { ok: false, conflict: true, currentVersion: r.body.currentVersion,
+        hint: "重新 read 后合并，再用 currentVersion 重试" });
+      fail(4, r.body.error || ("http " + r.status));
+      break;
+    }
+    case "gate": {
+      const r = await api("POST", "/api/gate", {
+        case: O.case || "default", gate: O.gate, status: O.status, note: O.note || "",
+        scope: O.scope || "case",
+        actor: O.actor || process.env.DESK_ACTOR || "agent"
+      });
+      if (r.status === 200) out(0, { ok: true, gate: r.body.gate, scope: r.body.scope, status: r.body.status });
+      fail(1, r.body.error || ("http " + r.status));
+      break;
+    }
+    case "model": {
+      if (O.check) {
+        // 核对"面板里配的"和"员工真跑的"：两者不一致时退出码 5
+        const c = O.case || "default";
+        const both = await Promise.all([
+          api("GET", "/api/models?case=" + encodeURIComponent(c)),
+          api("GET", "/api/snapshot?case=" + encodeURIComponent(c))
+        ]);
+        if (both[0].status !== 200) fail(1, both[0].body.error || "http " + both[0].status);
+        if (both[1].status !== 200) fail(1, both[1].body.error || "http " + both[1].status);
+        const ms = both[0].body || {}, act = (both[1].body || {}).actualModels || {};
+        const rows = ["macro", "industry", "stock", "audit", "legal", "trader"].map(a => {
+          const cfg = (ms.byAgent && ms.byAgent[a]) || ms.default || {};
+          const at = act[a] || null;
+          const mismatch = !!(at && cfg.model && at.model !== cfg.model);
+          return { agent: a, configured: cfg.model || null,
+            configuredProvider: cfg.provider || null,
+            actual: at ? at.model : null, reportedAt: at ? at.at : null, mismatch };
+        });
+        const bad = rows.filter(x => x.mismatch);
+        out(bad.length ? 5 : 0, { ok: bad.length === 0, case: c, rows, mismatchCount: bad.length,
+          note: bad.length
+            ? "配置≠实际：面板的模型选择只记录意向，不会改变 DSH 运行时；要真改请在 DSH 里切换到该模型后重跑"
+            : "配置与实际一致" });
+      }
+      const r = await api("POST", "/api/agent/model", {
+        case: O.case || "default", agent: O.agent || process.env.DESK_ACTOR || "agent",
+        model: O.model, provider: O.provider || null
+      });
+      if (r.status === 200) out(0, { ok: true, actual: r.body.actual, configured: r.body.configured,
+        mismatch: !!r.body.mismatch });
+      fail(1, r.body.error || ("http " + r.status));
+      break;
+    }
+    case "task": {
+      const c = O.case || "default";
+      if (O.list) {
+        const r = await api("GET", "/api/tasks?case=" + encodeURIComponent(c));
+        if (r.status !== 200) fail(1, r.body.error || "http " + r.status);
+        out(0, { ok: true, case: c, tasks: r.body.tasks || [] });
+      }
+      if (O.done) {
+        const r = await api("POST", "/api/task/done", {
+          case: c, id: O.id || undefined, agent: O.agent || process.env.DESK_ACTOR || undefined,
+          summary: O.summary || "", deliverables: O.deliverables || (O.deliverable ? [].concat(O.deliverable) : [])
+        });
+        if (r.status === 200) out(0, { ok: true, task: r.body.task });
+        fail(1, r.body.error || ("http " + r.status));
+      }
+      if (!O.agent || !O.text) fail(1, "需要 --agent 和 --text（或 --done 交付）");
+      const r = await api("POST", "/api/task", {
+        case: c, agent: O.agent, text: O.text, target: O.target || null,
+        by: O.by || process.env.DESK_ACTOR || "you"
+      });
+      if (r.status === 200) out(0, { ok: true, task: r.body.task });
+      fail(1, r.body.error || ("http " + r.status));
+      break;
+    }
+    case "search": {
+      const q = O.q === true ? (O._ || []).join(" ") : (O.q || (O._ || []).join(" "));
+      if (!q) fail(1, "需要 --q \"关键字\"");
+      const r = await api("GET", "/api/search?case=" + encodeURIComponent(O.case || "default") +
+        "&q=" + encodeURIComponent(q) + "&limit=" + encodeURIComponent(O.limit || "8"));
+      if (r.status !== 200) fail(1, r.body.error || ("http " + r.status));
+      out(0, { ok: true, q, indexed: r.body.indexed, hits: r.body.hits });
+      break;
+    }
+    case "kb": {
+      const agent = O.agent || process.env.DESK_ACTOR || "agent";
+      if (O.list) {
+        const r = await api("GET", "/api/kb/list?agent=" + encodeURIComponent(agent));
+        out(r.status === 200 ? 0 : 1, { ok: r.status === 200, agent, pages: (r.body.pages || []) });
+      }
+      if (O.search !== undefined) {
+        const r = await api("GET", "/api/kb/search?agent=" + encodeURIComponent(agent) +
+          "&q=" + encodeURIComponent(O.search === true ? "" : O.search));
+        out(r.status === 200 ? 0 : 1, { ok: r.status === 200, agent, hits: (r.body.hits || []) });
+      }
+      if (O.get) {
+        const r = await api("GET", "/api/kb/page?agent=" + encodeURIComponent(agent) + "&slug=" + encodeURIComponent(O.get));
+        out(r.status === 200 ? 0 : 1, r.status === 200 ? { ok: true, ...r.body } : r.body);
+      }
+      if (O.put) {
+        if (!O.title) fail(1, "需要 --title");
+        let body = O.body || "";
+        if (O.file) body = fs.readFileSync(O.file, "utf8");
+        if (!body) fail(1, "需要 --file 或 --body");
+        const r = await api("POST", "/api/kb/put", { case: O.case || "default", agent, title: O.title,
+          body, tags: O.tags ? String(O.tags).split(",").map(s => s.trim()).filter(Boolean) : [],
+          sources: O.source ? [].concat(O.source) : [],
+          links: O.link ? [].concat(O.link) : [] });
+        if (r.status === 200) out(0, { ok: true, page: r.body.page });
+        fail(1, r.body.error || ("http " + r.status));
+      }
+      fail(1, "用法：desk kb --list | --search --q \"关键字\" | --get --slug x | --put --title \"..\" --file x.md --tags a,b --source \"..\"");
+      break;
+    }
+    case "review": {
+      const c = O.case || "default";
+      if (O.list) {
+        const r = await api("GET", "/api/reviews?case=" + encodeURIComponent(c));
+        if (r.status !== 200) fail(1, r.body.error || "http " + r.status);
+        const mine = (r.body.reviews || []).filter(n => !O.service || n.service === O.service);
+        out(0, { ok: true, case: c, counts: r.body.counts, reviews: mine });
+      }
+      if (O.request) {
+        const r = await api("POST", "/api/review/request", { case: c, service: O.service || "audit",
+          path: O.path, requester: O.by || process.env.DESK_ACTOR || "lead", criteria: O.criteria || "" });
+        if (r.status === 200) out(0, { ok: true, review: r.body.review, reused: !!r.body.reused });
+        fail(1, r.body.error || ("http " + r.status));
+      }
+      if (O.verdict) {
+        let findings = O.finding ? [].concat(O.finding) : [];
+        if (O.findings) { try { findings = JSON.parse(O.findings); } catch (_) { findings = [String(O.findings)]; } }
+        const r = await api("POST", "/api/review/verdict", { case: c, id: O.id, result: O.result,
+          findings, note: O.note || "", agent: O.agent || process.env.DESK_ACTOR || "agent" });
+        if (r.status === 200) out(0, { ok: true, review: r.body.review });
+        fail(1, r.body.error || ("http " + r.status));
+      }
+      if (O.waive) {
+        const r = await api("POST", "/api/review/waive", { case: c, id: O.id,
+          by: O.by || "you", note: O.note || "" });
+        if (r.status === 200) out(0, { ok: true, review: r.body.review });
+        fail(1, r.body.error || ("http " + r.status));
+      }
+      fail(1, "用法：desk review --list | --request --service audit --path X | --verdict --id R1 --result pass|conditional|fail | --waive --id R1");
+      break;
+    }
+    case "need": {
+      const c = O.case || "default";
+      const actor = O.agent || process.env.DESK_ACTOR || "agent";
+      if (O.list) {
+        const r = await api("GET", "/api/needs?case=" + encodeURIComponent(c));
+        if (r.status !== 200) fail(1, r.body.error || "http " + r.status);
+        out(0, { ok: true, case: c, needs: (r.body.needs || []).filter(n => n.agent === actor || !O.agent) });
+      }
+      if (!O.title) fail(1, "需要 --title（一句话说清缺什么）");
+      let spec = null;
+      if (O["spec-file"]) {
+        try { spec = JSON.parse(fs.readFileSync(O["spec-file"], "utf8")); } catch (e) { fail(1, "spec-file 解析失败：" + e.message); }
+      } else if (O.spec) {
+        try { spec = JSON.parse(O.spec); } catch (e) { fail(1, "--spec 需要 JSON"); }
+      }
+      const r = await api("POST", "/api/need", {
+        case: c, agent: actor, kind: O.kind || "other",
+        title: O.title, detail: O.detail || "", spec: spec,
+        blocking: O.blocking === undefined ? true : !(O.blocking === false || O.blocking === "false" || O.blocking === "0")
+      });
+      if (r.status === 200) out(0, { ok: true, need: r.body.need });
+      fail(1, r.body.error || ("http " + r.status));
+      break;
+    }
+    case "upload": {
+      if (!O.file) fail(1, "需要 --file <本地路径>");
+      const buf = fs.readFileSync(O.file);
+      const rel = O.path || ("uploads/" + Date.now() + "-" + require("path").basename(O.file));
+      const r = await api("POST", "/api/upload", {
+        case: O.case || "default", path: rel, name: require("path").basename(O.file),
+        contentBase64: buf.toString("base64"), by: O.by || (O.actor && O.actor !== process.env.DESK_ACTOR ? O.actor : "you")
+      });
+      if (r.status === 200) out(0, { ok: true, path: r.body.path, version: r.body.version, bytes: r.body.bytes });
+      fail(1, r.body.error || ("http " + r.status));
+      break;
+    }
+    case "status": {
+      const r = await api("GET", "/api/snapshot?case=" + encodeURIComponent(O.case || "default"));
+      if (r.status !== 200) fail(1, r.body.error || ("http " + r.status));
+      out(0, { ok: true, case: r.body.case, files: r.body.files, gates: r.body.gates, locks: r.body.locks });
+      break;
+    }
+    case "events": {
+      const r = await api("GET", "/api/events?since=" + encodeURIComponent(O.since || "0"));
+      if (r.status !== 200) fail(1, r.body.error || ("http " + r.status));
+      out(0, { ok: true, events: r.body.events });
+      break;
+    }
+    case "health": {
+      const r = await api("GET", "/api/health");
+      out(r.status === 200 ? 0 : 1, r.body);
+      break;
+    }
+    default:
+      console.error("usage: desk <acquire|cat|peek|read|write|release|renew|gate|task|need|upload|model|status|events|health> [options]");
+      console.error("       desk model --check [--case c]   # 配置 vs 实际，不一致退出码 5");
+      process.exit(1);
+  }
+}
+main().catch(e => fail(1, String(e && e.message || e)));

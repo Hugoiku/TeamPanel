@@ -1,0 +1,25 @@
+{
+  "id": "tushare-api",
+  "name": "Tushare · 通用宏观 API",
+  "category": "macro",
+  "kind": "script",
+  "runtime": "node",
+  "script": "scripts/tushare_any.js",
+  "args": [
+    "--api",
+    "{api}",
+    "--params",
+    "{params}",
+    "--fields",
+    "{fields}"
+  ],
+  "vars": {
+    "api": "cn_cpi",
+    "params": "{}",
+    "fields": ""
+  },
+  "force": true,
+  "tier": "market-api",
+  "evidenceField": "Tushare 宏观序列",
+  "notes": "通用：cn_cpi/cn_ppi/cn_gdp/cn_m/cn_pmi/shibor/us_tycr 等；按需传 params。"
+}

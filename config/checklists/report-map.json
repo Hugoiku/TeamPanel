@@ -1,0 +1,279 @@
+{
+  "version": 1,
+  "macro": [
+    {
+      "id": "macro_status",
+      "title": "宏观现状",
+      "modules": [
+        "growth",
+        "inflation",
+        "liquidity_credit"
+      ],
+      "keywords": [
+        "增长",
+        "通胀",
+        "金融条件",
+        "现状"
+      ],
+      "impact": "critical"
+    },
+    {
+      "id": "fiscal_debt",
+      "title": "财政与地方债务",
+      "modules": [
+        "fiscal_debt"
+      ],
+      "keywords": [
+        "财政",
+        "债务",
+        "化债",
+        "专项债",
+        "土地出让"
+      ],
+      "impact": "important"
+    },
+    {
+      "id": "external_policy",
+      "title": "外部、政策与传导",
+      "modules": [
+        "external_fx",
+        "policy",
+        "demand_decomposition"
+      ],
+      "keywords": [
+        "外部",
+        "汇率",
+        "政策",
+        "出口",
+        "国际收支"
+      ],
+      "impact": "important"
+    },
+    {
+      "id": "market_validation",
+      "title": "市场验证",
+      "modules": [
+        "market_validation"
+      ],
+      "keywords": [
+        "市场验证",
+        "利率",
+        "信用利差",
+        "汇率"
+      ],
+      "impact": "important"
+    },
+    {
+      "id": "scenarios_risks",
+      "title": "情景与风险",
+      "modules": [
+        "scenarios_risks",
+        "real_estate",
+        "inventory_cycle",
+        "employment_income",
+        "global_macro",
+        "positioning",
+        "demographics",
+        "policy_documents",
+        "climate_energy"
+      ],
+      "keywords": [
+        "情景",
+        "风险",
+        "触发器"
+      ],
+      "impact": "important"
+    },
+    {
+      "id": "data_scope",
+      "title": "数据与口径",
+      "modules": [
+        "data_quality"
+      ],
+      "keywords": [
+        "数据",
+        "口径",
+        "样本"
+      ],
+      "impact": "minor"
+    }
+  ],
+  "industry": [
+    {
+      "id": "scope_data",
+      "title": "研究范围与数据",
+      "modules": [
+        "scope_definition",
+        "data_quality"
+      ],
+      "keywords": [
+        "范围",
+        "口径",
+        "数据",
+        "定义"
+      ],
+      "impact": "minor"
+    },
+    {
+      "id": "supply_price",
+      "title": "供需、价格与库存",
+      "modules": [
+        "market_size_growth",
+        "supply_capacity",
+        "demand_structure",
+        "price_mechanism",
+        "inventory_channel",
+        "content_pipeline",
+        "user_metrics",
+        "ai_production",
+        "platform_distribution"
+      ],
+      "keywords": [
+        "供需",
+        "价格",
+        "库存",
+        "供给",
+        "产能",
+        "内容",
+        "用户",
+        "AI",
+        "平台"
+      ],
+      "impact": "critical"
+    },
+    {
+      "id": "competition_cost",
+      "title": "竞争、成本与全球供给",
+      "modules": [
+        "competition_share",
+        "cost_curve",
+        "value_chain_profit",
+        "global_trade",
+        "capacity_capex",
+        "technology_substitution",
+        "cycle_position",
+        "monetization",
+        "content_cost",
+        "ad_cycle",
+        "subscription",
+        "overseas",
+        "ip_regulation"
+      ],
+      "keywords": [
+        "竞争",
+        "成本",
+        "全球",
+        "供给",
+        "份额",
+        "变现",
+        "成本",
+        "广告",
+        "付费",
+        "版权"
+      ],
+      "impact": "important"
+    },
+    {
+      "id": "policy_demand_risk",
+      "title": "政策、需求与风险",
+      "modules": [
+        "policy_regulation",
+        "demand_elasticity",
+        "downstream_scenarios",
+        "risks_counter",
+        "company_benchmark",
+        "customer_concentration",
+        "channel_mix",
+        "esg",
+        "company_benchmark",
+        "ip_regulation"
+      ],
+      "keywords": [
+        "政策",
+        "需求",
+        "风险",
+        "管制",
+        "下游",
+        "公司",
+        "标的",
+        "监管"
+      ],
+      "impact": "important"
+    }
+  ],
+  "stock": [
+    {
+      "id": "financials",
+      "title": "财务质量",
+      "modules": [
+        "data_quality",
+        "segment_mix",
+        "financial_quality",
+        "working_capital",
+        "accounting_quality"
+      ],
+      "keywords": [
+        "财务",
+        "收入",
+        "毛利",
+        "现金流",
+        "营运资本"
+      ],
+      "impact": "critical"
+    },
+    {
+      "id": "business_governance",
+      "title": "商业模式与治理",
+      "modules": [
+        "business_model",
+        "governance"
+      ],
+      "keywords": [
+        "商业模式",
+        "护城河",
+        "治理",
+        "股权"
+      ],
+      "impact": "important"
+    },
+    {
+      "id": "capex_catalysts_risks",
+      "title": "资本开支、催化剂与风险",
+      "modules": [
+        "capex_projects",
+        "liquidity",
+        "catalysts_risks",
+        "management",
+        "dividend_buyback",
+        "esg_litigation",
+        "event_calendar"
+      ],
+      "keywords": [
+        "资本开支",
+        "项目",
+        "催化剂",
+        "风险",
+        "流动性"
+      ],
+      "impact": "important"
+    },
+    {
+      "id": "valuation",
+      "title": "估值与情景",
+      "modules": [
+        "valuation",
+        "scenarios_target",
+        "consensus",
+        "peer_history"
+      ],
+      "keywords": [
+        "估值",
+        "DCF",
+        "可比",
+        "目标",
+        "情景"
+      ],
+      "impact": "critical"
+    }
+  ]
+}

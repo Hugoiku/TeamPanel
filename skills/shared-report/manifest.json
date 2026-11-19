@@ -1,0 +1,11 @@
+{
+  "id": "shared-report",
+  "name": "共享研究报告协作",
+  "version": "1.0.0",
+  "description": "章节文件 + 总报告装配 + desk 锁队列",
+  "assign": ["macro","industry","stock","audit","legal"],
+  "scripts": [],
+  "sources": [],
+  "requires": {"python": [], "node": []},
+  "notes": "reports/sections/*.md 各自编辑；reports/master.md 由 scripts/master_report.js 装配。"
+}

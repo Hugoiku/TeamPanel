@@ -1,0 +1,338 @@
+{
+  "version": 1,
+  "metrics": [
+    {
+      "id": "macro.cpi",
+      "name": "CPI 同比",
+      "domain": "macro",
+      "frequency": "monthly",
+      "unit": "%",
+      "sources": [
+        "eastmoney-cpi"
+      ],
+      "status": "active",
+      "maxStalenessMonths": 2
+    },
+    {
+      "id": "macro.ppi",
+      "name": "PPI 同比",
+      "domain": "macro",
+      "frequency": "monthly",
+      "unit": "%",
+      "sources": [
+        "eastmoney-ppi"
+      ],
+      "status": "active",
+      "maxStalenessMonths": 2
+    },
+    {
+      "id": "macro.pmi",
+      "name": "制造业 PMI",
+      "domain": "macro",
+      "frequency": "monthly",
+      "unit": "",
+      "sources": [
+        "eastmoney-pmi"
+      ],
+      "status": "active",
+      "maxStalenessMonths": 2
+    },
+    {
+      "id": "macro.gdp",
+      "name": "GDP",
+      "domain": "macro",
+      "frequency": "quarterly",
+      "unit": "亿元",
+      "sources": [
+        "eastmoney-gdp"
+      ],
+      "status": "active",
+      "maxStalenessMonths": 6
+    },
+    {
+      "id": "macro.cn10y",
+      "name": "中国10年期国债到期收益率",
+      "aliases": [
+        "10年期国债",
+        "10Y国债",
+        "国债收益率"
+      ],
+      "domain": "macro",
+      "frequency": "daily",
+      "unit": "%",
+      "sources": [
+        "chinabond-10y"
+      ],
+      "status": "active",
+      "maxStalenessDays": 7
+    },
+    {
+      "id": "macro.core_cpi",
+      "name": "核心CPI同比",
+      "aliases": [
+        "核心CPI",
+        "扣除食品和能源CPI"
+      ],
+      "domain": "macro",
+      "frequency": "monthly",
+      "unit": "%",
+      "sources": [
+        "stats-core-cpi",
+        "eastmoney-cpi"
+      ],
+      "status": "active",
+      "maxStalenessMonths": 2
+    },
+    {
+      "id": "market.csi300_vol",
+      "name": "沪深300隐含波动率",
+      "aliases": [
+        "中国波指",
+        "iVX",
+        "沪深300波动率"
+      ],
+      "domain": "market",
+      "frequency": "daily",
+      "unit": "%",
+      "sources": [
+        "csi300-vol"
+      ],
+      "status": "active",
+      "maxStalenessDays": 7
+    },
+    {
+      "id": "macro.dr007",
+      "name": "DR007",
+      "aliases": [
+        "7天回购",
+        "银行间7天质押式回购"
+      ],
+      "domain": "macro",
+      "frequency": "daily",
+      "unit": "%",
+      "sources": [
+        "tushare-dr007"
+      ],
+      "status": "active",
+      "definition": "银行间市场存款类机构7天期质押式回购加权平均利率（DR007）",
+      "stockFlow": "level",
+      "region": "CN",
+      "sourceNote": "无免费公开源；可上传 CSV，或配置 Tushare（可选，需积分）",
+      "maxStalenessDays": 7
+    },
+    {
+      "id": "macro.credit_spread",
+      "name": "信用利差",
+      "aliases": [
+        "3年AAA中票-国债",
+        "信用利差"
+      ],
+      "domain": "macro",
+      "frequency": "daily",
+      "unit": "bp",
+      "sources": [],
+      "status": "active",
+      "sourceNote": "无免费结构化源（中债信用曲线需授权/复杂抓取）；请上传 CSV 或在面板登记来源",
+      "maxStalenessDays": 7
+    },
+    {
+      "id": "macro.tsf",
+      "name": "社会融资规模增量",
+      "aliases": [
+        "社融",
+        "社会融资",
+        "社会融资规模",
+        "社融增量",
+        "社融规模"
+      ],
+      "domain": "macro",
+      "frequency": "monthly",
+      "unit": "亿元",
+      "sources": [
+        "mofcom-tsf",
+        "tushare-sf-month"
+      ],
+      "status": "active",
+      "definition": "中国人民银行口径，社会融资规模当月增量（亿元）",
+      "stockFlow": "flow",
+      "region": "CN",
+      "sourceNote": "免费优先：商务部数据中心（无需 token/积分）；Tushare 仅作可选兜底（需积分）",
+      "maxStalenessMonths": 2,
+      "crossCheck": {
+        "enabled": true,
+        "relTolerance": 0.02,
+        "absTolerance": 100,
+        "maxPeriods": 6
+      }
+    },
+    {
+      "id": "macro.special_bond",
+      "name": "地方政府专项债发行进度",
+      "definition": "新增专项债发行额、全年限额、发行进度、债务付息（财政部/地方债平台口径）",
+      "unit": "亿元",
+      "frequency": "monthly",
+      "stockFlow": "flow",
+      "region": "CN",
+      "aliases": [
+        "专项债",
+        "新增专项债",
+        "专项债发行",
+        "专项债进度"
+      ],
+      "sources": [],
+      "status": "draft",
+      "sourceNote": "待接财政部/地方政府债券信息公开平台；当前请上传 CSV",
+      "maxStalenessMonths": 2
+    },
+    {
+      "id": "macro.m1_yoy",
+      "name": "M1 同比",
+      "aliases": [
+        "M1",
+        "M1同比",
+        "狭义货币"
+      ],
+      "definition": "中国人民银行口径，M1 同比增速",
+      "unit": "%",
+      "frequency": "monthly",
+      "stockFlow": "flow",
+      "region": "CN",
+      "sources": [
+        "eastmoney-money-m1",
+        "tushare-cn-m1"
+      ],
+      "status": "active",
+      "sourceNote": "免费优先：东方财富数据中心；Tushare 仅作可选兜底（需积分）",
+      "maxStalenessMonths": 2,
+      "crossCheck": {
+        "enabled": true,
+        "absTolerance": 0.1,
+        "maxPeriods": 6
+      }
+    },
+    {
+      "id": "macro.m2_yoy",
+      "name": "M2 同比",
+      "aliases": [
+        "M2",
+        "M2同比",
+        "广义货币"
+      ],
+      "definition": "中国人民银行口径，M2 同比增速",
+      "unit": "%",
+      "frequency": "monthly",
+      "stockFlow": "flow",
+      "region": "CN",
+      "sources": [
+        "eastmoney-money-m2",
+        "tushare-cn-m2"
+      ],
+      "status": "active",
+      "sourceNote": "免费优先：东方财富数据中心；Tushare 仅作可选兜底（需积分）",
+      "maxStalenessMonths": 2,
+      "crossCheck": {
+        "enabled": true,
+        "absTolerance": 0.1,
+        "maxPeriods": 6
+      }
+    },
+    {
+      "id": "rates.lpr_1y",
+      "name": "1年期 LPR",
+      "aliases": [
+        "LPR",
+        "1年期LPR",
+        "贷款市场报价利率"
+      ],
+      "definition": "全国银行间同业拆借中心公布的1年期贷款市场报价利率",
+      "unit": "%",
+      "frequency": "daily",
+      "stockFlow": "level",
+      "region": "CN",
+      "sources": [
+        "eastmoney-lpr",
+        "tushare-lpr"
+      ],
+      "status": "active",
+      "sourceNote": "免费优先：东方财富数据中心；Tushare 仅作可选兜底（需积分）",
+      "maxStalenessDays": 45,
+      "crossCheck": {
+        "enabled": true,
+        "absTolerance": 0.01,
+        "maxPeriods": 6
+      }
+    },
+    {
+      "id": "rates.shibor_1w",
+      "name": "SHIBOR 1W",
+      "aliases": [
+        "SHIBOR",
+        "1周SHIBOR",
+        "上海银行间同业拆放利率"
+      ],
+      "definition": "上海银行间同业拆放利率1周品种",
+      "unit": "%",
+      "frequency": "daily",
+      "stockFlow": "level",
+      "region": "CN",
+      "sources": [
+        "chinamoney-shibor-1w",
+        "tushare-shibor"
+      ],
+      "status": "active",
+      "sourceNote": "免费优先：中国货币网；Tushare 仅作可选兜底（需积分）",
+      "maxStalenessDays": 7,
+      "crossCheck": {
+        "enabled": true,
+        "absTolerance": 0.03,
+        "maxPeriods": 6
+      }
+    },
+    {
+      "id": "rates.us10y",
+      "name": "美国10年期国债收益率",
+      "aliases": [
+        "美债10年",
+        "美国10年期国债",
+        "US10Y"
+      ],
+      "definition": "美国10年期国债到期收益率",
+      "unit": "%",
+      "frequency": "daily",
+      "stockFlow": "level",
+      "region": "US",
+      "sources": [
+        "fred-us10y",
+        "tushare-us10y"
+      ],
+      "status": "active",
+      "sourceNote": "免费优先：FRED（需免费 API key，无 key 时上传 CSV）；Tushare 仅作可选兜底（需积分）",
+      "maxStalenessDays": 7,
+      "crossCheck": {
+        "enabled": true,
+        "absTolerance": 0.05,
+        "maxPeriods": 6
+      }
+    },
+    {
+      "id": "rates.repo7",
+      "name": "银行间7天质押式回购 R007",
+      "aliases": [
+        "R007",
+        "7天质押式回购",
+        "7天回购"
+      ],
+      "definition": "银行间7天质押式回购加权平均利率（R007，非 DR007）",
+      "unit": "%",
+      "frequency": "daily",
+      "stockFlow": "level",
+      "region": "CN",
+      "sources": [
+        "tushare-repo7"
+      ],
+      "status": "active",
+      "sourceNote": "无免费公开源；可上传 CSV，或配置 Tushare（可选，需积分）",
+      "maxStalenessDays": 7
+    }
+  ]
+}

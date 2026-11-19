@@ -1,0 +1,11 @@
+{
+  "id": "pbc-home",
+  "name": "中国人民银行 · 首页政策/流动性",
+  "category": "macro",
+  "kind": "html",
+  "url": "https://www.pbc.gov.cn/",
+  "force": false,
+  "evidenceField": "央行政策/公开市场操作动态",
+  "notes": "首页新闻与政策发布，适合判断流动性取向。",
+  "tier": "official"
+}

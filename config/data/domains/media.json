@@ -1,0 +1,55 @@
+{
+  "id": "media",
+  "name": "传媒",
+  "metrics": [
+    {
+      "id": "media.box_office",
+      "name": "电影票房",
+      "frequency": "daily",
+      "unit": "亿元",
+      "sources": [
+        "maoyan",
+        "dengta"
+      ]
+    },
+    {
+      "id": "media.ad_revenue",
+      "name": "广告收入",
+      "frequency": "quarterly",
+      "unit": "亿元",
+      "sources": [
+        "company_filing",
+        "questmobile",
+        "ctr"
+      ]
+    },
+    {
+      "id": "media.mau",
+      "name": "月活跃用户",
+      "frequency": "quarterly",
+      "unit": "万人",
+      "sources": [
+        "questmobile",
+        "company_filing"
+      ]
+    },
+    {
+      "id": "media.content_filings",
+      "name": "剧集/综艺备案数",
+      "frequency": "monthly",
+      "unit": "部",
+      "sources": [
+        "nrta"
+      ]
+    },
+    {
+      "id": "media.arpu",
+      "name": "ARPU",
+      "frequency": "quarterly",
+      "unit": "元",
+      "sources": [
+        "company_filing"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,16 @@
+{
+  "id": "tushare-pmi-detail",
+  "name": "Tushare · PMI 分项",
+  "category": "macro",
+  "kind": "script",
+  "runtime": "node",
+  "script": "scripts/pmi_detail.js",
+  "args": [
+    "--months",
+    "12"
+  ],
+  "force": true,
+  "tier": "market-api",
+  "evidenceField": "制造业/非制造业 PMI 分项",
+  "notes": "含生产、新订单、新出口订单、价格等分项；字段映射见输出。"
+}

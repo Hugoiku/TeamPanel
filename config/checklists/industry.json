@@ -1,0 +1,598 @@
+{
+  "version": 1,
+  "agent": "industry",
+  "universal": {
+    "required": [
+      {
+        "id": "scope_definition",
+        "name": "行业定义与范围",
+        "purpose": "产品、上下游、统计口径"
+      },
+      {
+        "id": "market_size_growth",
+        "name": "市场规模与增速",
+        "purpose": "总量、增长、区域/细分结构"
+      },
+      {
+        "id": "supply_capacity",
+        "name": "供给与产能",
+        "purpose": "产能、产量、开工率、扩产"
+      },
+      {
+        "id": "demand_structure",
+        "name": "需求结构",
+        "purpose": "下游分项、需求驱动、弹性"
+      },
+      {
+        "id": "price_mechanism",
+        "name": "价格机制",
+        "purpose": "现货/长协/期货、成本支撑、价差"
+      },
+      {
+        "id": "inventory_channel",
+        "name": "库存与渠道",
+        "purpose": "厂库、社库、渠道库存、周转"
+      },
+      {
+        "id": "competition_share",
+        "name": "竞争格局",
+        "purpose": "份额、集中度、壁垒、玩家"
+      },
+      {
+        "id": "cost_curve",
+        "name": "成本曲线",
+        "purpose": "成本分布、边际产能、利润池"
+      },
+      {
+        "id": "value_chain_profit",
+        "name": "产业链利润分配",
+        "purpose": "上下游议价、利润迁移"
+      },
+      {
+        "id": "policy_regulation",
+        "name": "政策与监管",
+        "purpose": "准入、环保、安全、出口管制"
+      },
+      {
+        "id": "risks_counter",
+        "name": "风险与反证",
+        "purpose": "周期、替代、政策、需求不及预期"
+      },
+      {
+        "id": "data_quality",
+        "name": "数据与口径",
+        "purpose": "样本、频率、单位、来源等级"
+      }
+    ],
+    "optional": [
+      {
+        "id": "global_trade",
+        "name": "全球供给与进出口",
+        "purpose": "海外产能、贸易流、关税"
+      },
+      {
+        "id": "capacity_capex",
+        "name": "产能周期与资本开支",
+        "purpose": "未来供给释放"
+      },
+      {
+        "id": "technology_substitution",
+        "name": "技术与替代",
+        "purpose": "技术路线、替代品渗透"
+      },
+      {
+        "id": "downstream_scenarios",
+        "name": "下游情景",
+        "purpose": "不同需求增速下的供需平衡"
+      },
+      {
+        "id": "company_benchmark",
+        "name": "公司对标",
+        "purpose": "龙头/二线成本、盈利、估值"
+      },
+      {
+        "id": "esg",
+        "name": "ESG",
+        "purpose": "环保、能耗、治理"
+      },
+      {
+        "id": "cycle_position",
+        "name": "周期位置",
+        "purpose": "库存/产能/价格周期"
+      },
+      {
+        "id": "demand_elasticity",
+        "name": "需求弹性",
+        "purpose": "价格对需求的抑制"
+      },
+      {
+        "id": "customer_concentration",
+        "name": "客户集中度",
+        "purpose": "大客户依赖"
+      },
+      {
+        "id": "channel_mix",
+        "name": "渠道结构",
+        "purpose": "直销/经销/线上"
+      }
+    ]
+  },
+  "types": {
+    "cyclical_manufacturing": {
+      "label": "周期制造（有色/钢铁/化工/机械）",
+      "required": [
+        {
+          "id": "capacity_cycle",
+          "name": "产能周期",
+          "purpose": "资本开支、投产、退出"
+        },
+        {
+          "id": "inventory_cycle",
+          "name": "库存周期",
+          "purpose": "补库/去库位置"
+        },
+        {
+          "id": "global_supply",
+          "name": "全球供给",
+          "purpose": "海外矿山/冶炼/停产"
+        },
+        {
+          "id": "cost_support",
+          "name": "成本支撑",
+          "purpose": "现金成本、边际成本"
+        }
+      ],
+      "optional": [
+        {
+          "id": "substitution",
+          "name": "替代材料",
+          "purpose": "高价抑需与替代"
+        },
+        {
+          "id": "utilization",
+          "name": "开工率",
+          "purpose": "供给弹性"
+        },
+        {
+          "id": "trade_flow",
+          "name": "贸易流",
+          "purpose": "出口管制/关税"
+        }
+      ]
+    },
+    "consumer": {
+      "label": "消费（食品饮料/零售/服务）",
+      "required": [
+        {
+          "id": "brand_channel",
+          "name": "品牌与渠道",
+          "purpose": "品牌力、渠道结构、动销"
+        },
+        {
+          "id": "price_mix",
+          "name": "量价与产品结构",
+          "purpose": "ASP、结构升级/降级"
+        },
+        {
+          "id": "repeat_purchase",
+          "name": "复购与用户",
+          "purpose": "留存、复购、客群"
+        }
+      ],
+      "optional": [
+        {
+          "id": "cohort",
+          "name": "客群分层",
+          "purpose": "年龄/城市/收入"
+        },
+        {
+          "id": "store_efficiency",
+          "name": "门店效率",
+          "purpose": "坪效、开店/关店"
+        },
+        {
+          "id": "marketing_roi",
+          "name": "营销效率",
+          "purpose": "费用投放产出"
+        }
+      ]
+    },
+    "tmt_media": {
+      "label": "TMT/传媒（互联网/软件/内容）",
+      "required": [
+        {
+          "id": "user_metrics",
+          "name": "用户指标",
+          "purpose": "MAU/DAU/时长/ARPU"
+        },
+        {
+          "id": "content_pipeline",
+          "name": "内容/产品管线",
+          "purpose": "供给与排播"
+        },
+        {
+          "id": "ad_cycle",
+          "name": "广告/变现周期",
+          "purpose": "广告主预算、eCPM"
+        },
+        {
+          "id": "platform_regulation",
+          "name": "平台监管",
+          "purpose": "内容、数据、反垄断"
+        }
+      ],
+      "optional": [
+        {
+          "id": "content_cost",
+          "name": "内容成本",
+          "purpose": "版权/自制/采购"
+        },
+        {
+          "id": "ecosystem",
+          "name": "生态与分发",
+          "purpose": "渠道、算法、合作"
+        },
+        {
+          "id": "ai_impact",
+          "name": "AI 影响",
+          "purpose": "降本/替代/新供给"
+        }
+      ],
+      "exclude": [
+        "inventory_channel",
+        "price_mechanism"
+      ]
+    },
+    "financials": {
+      "label": "金融（银行/保险/券商）",
+      "required": [
+        {
+          "id": "nim",
+          "name": "净息差/利差",
+          "purpose": "资产收益与负债成本"
+        },
+        {
+          "id": "asset_quality",
+          "name": "资产质量",
+          "purpose": "不良、关注、拨备"
+        },
+        {
+          "id": "capital",
+          "name": "资本充足",
+          "purpose": "CET1、RWA、分红能力"
+        },
+        {
+          "id": "liquidity",
+          "name": "流动性",
+          "purpose": "LCR、存款结构"
+        },
+        {
+          "id": "regulation",
+          "name": "监管",
+          "purpose": "资本/业务/费率"
+        }
+      ],
+      "optional": [
+        {
+          "id": "fee_income",
+          "name": "中间业务",
+          "purpose": "手续费与财富管理"
+        },
+        {
+          "id": "insurance_reserve",
+          "name": "保险准备金",
+          "purpose": "假设与利差损"
+        },
+        {
+          "id": "brokerage",
+          "name": "经纪/自营",
+          "purpose": "成交与市场 beta"
+        }
+      ]
+    },
+    "utilities_infra": {
+      "label": "公用事业/基础设施",
+      "required": [
+        {
+          "id": "tariff",
+          "name": "价格/费率",
+          "purpose": "管制价格与调价机制"
+        },
+        {
+          "id": "capex",
+          "name": "资本开支",
+          "purpose": "在建、投产、回报率"
+        },
+        {
+          "id": "utilization",
+          "name": "利用率",
+          "purpose": "发电/水务/交通量"
+        },
+        {
+          "id": "regulation",
+          "name": "监管",
+          "purpose": "准许收益、补贴"
+        }
+      ],
+      "optional": [
+        {
+          "id": "fuel_cost",
+          "name": "燃料成本",
+          "purpose": "煤/气/电价"
+        },
+        {
+          "id": "debt_cost",
+          "name": "债务成本",
+          "purpose": "利率与再融资"
+        }
+      ]
+    },
+    "healthcare": {
+      "label": "医疗健康（药/器械/服务）",
+      "required": [
+        {
+          "id": "pipeline",
+          "name": "研发管线",
+          "purpose": "临床阶段、成功率"
+        },
+        {
+          "id": "reimbursement",
+          "name": "医保/支付",
+          "purpose": "准入、降价、放量"
+        },
+        {
+          "id": "clinical",
+          "name": "临床与注册",
+          "purpose": "审批、适应症"
+        },
+        {
+          "id": "regulation",
+          "name": "监管",
+          "purpose": "集采、合规"
+        }
+      ],
+      "optional": [
+        {
+          "id": "hospital_channel",
+          "name": "医院渠道",
+          "purpose": "准入与覆盖"
+        },
+        {
+          "id": "international",
+          "name": "出海",
+          "purpose": "FDA/CE、授权"
+        }
+      ]
+    },
+    "real_estate": {
+      "label": "地产/建筑",
+      "required": [
+        {
+          "id": "sales",
+          "name": "销售",
+          "purpose": "面积、金额、去化"
+        },
+        {
+          "id": "land",
+          "name": "土地",
+          "purpose": "拿地、地价、土储"
+        },
+        {
+          "id": "funding",
+          "name": "融资",
+          "purpose": "开发贷、债券、预售资金"
+        },
+        {
+          "id": "policy",
+          "name": "政策",
+          "purpose": "限购、信贷、保交楼"
+        },
+        {
+          "id": "inventory",
+          "name": "库存",
+          "purpose": "可售/去化周期"
+        }
+      ],
+      "optional": [
+        {
+          "id": "construction",
+          "name": "施工/竣工",
+          "purpose": "交付与结算"
+        },
+        {
+          "id": "cashflow",
+          "name": "现金流",
+          "purpose": "回款与偿债"
+        }
+      ]
+    },
+    "agriculture": {
+      "label": "农业",
+      "required": [
+        {
+          "id": "supply_weather",
+          "name": "供给与天气",
+          "purpose": "种植/养殖、天气"
+        },
+        {
+          "id": "price_cycle",
+          "name": "价格周期",
+          "purpose": "猪价/粮价/成本"
+        },
+        {
+          "id": "inventory",
+          "name": "库存",
+          "purpose": "冻品/粮食库存"
+        },
+        {
+          "id": "policy",
+          "name": "政策",
+          "purpose": "收储、补贴、进口"
+        }
+      ],
+      "optional": [
+        {
+          "id": "feed_cost",
+          "name": "饲料成本",
+          "purpose": "玉米/豆粕"
+        },
+        {
+          "id": "disease",
+          "name": "疫病",
+          "purpose": "供给冲击"
+        }
+      ]
+    },
+    "energy": {
+      "label": "能源（油/气/煤/新能源）",
+      "required": [
+        {
+          "id": "reserves",
+          "name": "储量/资源",
+          "purpose": "资源禀赋"
+        },
+        {
+          "id": "capex",
+          "name": "资本开支",
+          "purpose": "勘探开发/装机"
+        },
+        {
+          "id": "price",
+          "name": "价格",
+          "purpose": "油价/气价/煤价/电价"
+        },
+        {
+          "id": "policy",
+          "name": "政策",
+          "purpose": "补贴、碳、出口"
+        }
+      ],
+      "optional": [
+        {
+          "id": "opec",
+          "name": "OPEC/供给联盟",
+          "purpose": "产量政策"
+        },
+        {
+          "id": "demand_seasonality",
+          "name": "需求季节性",
+          "purpose": "旺季/库存"
+        }
+      ]
+    },
+    "general": {
+      "label": "通用（未知行业兜底）",
+      "required": [],
+      "optional": []
+    },
+    "technology_hardware": {
+      "label": "科技硬件（半导体/电子/设备）",
+      "required": [
+        {
+          "id": "technology_route",
+          "name": "技术路线",
+          "purpose": "制程/架构/替代风险"
+        },
+        {
+          "id": "capacity_utilization",
+          "name": "产能与利用率",
+          "purpose": "晶圆/产线/良率"
+        },
+        {
+          "id": "customer_concentration",
+          "name": "客户集中度",
+          "purpose": "大客户与订单"
+        },
+        {
+          "id": "supply_chain",
+          "name": "供应链",
+          "purpose": "设备/材料/代工/出口管制"
+        }
+      ],
+      "optional": [
+        {
+          "id": "rnd",
+          "name": "研发投入",
+          "purpose": "研发强度与管线"
+        },
+        {
+          "id": "inventory_cycle",
+          "name": "库存周期",
+          "purpose": "芯片/元器件库存"
+        },
+        {
+          "id": "capex",
+          "name": "资本开支",
+          "purpose": "扩产与折旧"
+        }
+      ]
+    },
+    "ai_content": {
+      "label": "AI内容/漫剧/短剧",
+      "required": [
+        {
+          "id": "content_pipeline",
+          "name": "内容管线与产能",
+          "purpose": "IP、剧本、制作、排播"
+        },
+        {
+          "id": "user_metrics",
+          "name": "用户与流量",
+          "purpose": "MAU/DAU/时长/付费"
+        },
+        {
+          "id": "monetization",
+          "name": "变现模式",
+          "purpose": "广告/付费/分账/电商"
+        },
+        {
+          "id": "content_cost",
+          "name": "内容成本",
+          "purpose": "制作/版权/AI 降本"
+        },
+        {
+          "id": "platform_distribution",
+          "name": "平台与分发",
+          "purpose": "抖音/快手/长视频/出海"
+        },
+        {
+          "id": "ai_production",
+          "name": "AI 生产链",
+          "purpose": "模型/工具/算力/版权"
+        },
+        {
+          "id": "ip_regulation",
+          "name": "IP 与监管",
+          "purpose": "版权、备案、内容合规"
+        }
+      ],
+      "optional": [
+        {
+          "id": "ad_cycle",
+          "name": "广告周期",
+          "purpose": "广告主预算/eCPM"
+        },
+        {
+          "id": "subscription",
+          "name": "订阅/付费",
+          "purpose": "ARPPU/续费"
+        },
+        {
+          "id": "overseas",
+          "name": "出海",
+          "purpose": "海外平台/文化折扣"
+        },
+        {
+          "id": "company_benchmark",
+          "name": "公司筛选",
+          "purpose": "相关标的与业务纯度"
+        }
+      ],
+      "exclude": [
+        "inventory_channel",
+        "price_mechanism"
+      ]
+    }
+  },
+  "defaultType": "general"
+}

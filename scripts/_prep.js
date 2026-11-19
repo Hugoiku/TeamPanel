@@ -1,0 +1,10 @@
+const fs=require('fs');
+const t=parseFloat(process.argv[2]||'0');
+const extra=(process.argv[3]||'').trim();
+let h=fs.readFileSync('dashboard/mockup.html','utf8');
+const pre='  for (var i0=0;i0<'+Math.round(t/0.05)+';i0++) sim.step(0.05);\n  render();\n  setInterval';
+if(!h.includes('  render();\n  setInterval')) throw new Error('inject point missing');
+h=h.replace('  render();\n  setInterval', pre);
+if(extra) h=h.replace('</body>','<script>'+extra+'</script>\n</body>');
+fs.writeFileSync('dashboard/_shot.html', h);
+console.log('prepared t='+t+(extra?' +hook':''));

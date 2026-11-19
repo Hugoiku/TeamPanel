@@ -1,0 +1,36 @@
+{
+  "id": "germanium",
+  "name": "锗",
+  "metrics": [
+    {
+      "id": "ge.spot.price",
+      "name": "锗锭现货均价",
+      "frequency": "monthly",
+      "unit": "元/千克",
+      "sources": [
+        "mysteel",
+        "smm"
+      ]
+    },
+    {
+      "id": "ge.export",
+      "name": "锗相关物项出口量/金额",
+      "frequency": "monthly",
+      "unit": "吨/万美元",
+      "sources": [
+        "customs",
+        "mofcom"
+      ]
+    },
+    {
+      "id": "ge.output",
+      "name": "中国锗金属产量",
+      "frequency": "annual",
+      "unit": "吨",
+      "sources": [
+        "usgs",
+        "stats"
+      ]
+    }
+  ]
+}

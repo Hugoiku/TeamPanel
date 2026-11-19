@@ -1,0 +1,22 @@
+{
+  "id": "stats-release",
+  "name": "国家统计局 · 按关键词取最新发布",
+  "category": "macro",
+  "kind": "script",
+  "runtime": "python",
+  "script": "scripts/stats_release.py",
+  "args": [
+    "--list",
+    "{list}",
+    "--keyword",
+    "{keyword}"
+  ],
+  "vars": {
+    "list": "https://www.stats.gov.cn/sj/zxfb/",
+    "keyword": "房地产"
+  },
+  "force": false,
+  "tier": "official",
+  "evidenceField": "统计局最新发布表格",
+  "notes": "通用：--var keyword=工业增加值/居民消费价格/房地产/固定资产投资。"
+}

@@ -1,0 +1,17 @@
+"use strict";
+const fs=require("fs"),path=require("path");
+const ROOT=path.resolve(__dirname,".."),CASE=process.argv[process.argv.indexOf("--case")+1]||"";
+if(!CASE)process.exit(2);
+const vault=path.join(ROOT,"vault",CASE),base=path.join(vault,"research");
+const read=(p,d)=>{try{return JSON.parse(fs.readFileSync(path.join(base,p),"utf8"));}catch(e){return d;}};
+const pack=read("sector-pack.json",null),profile=read("report-profile.json",{type:"mixed"}),claims=read("claims.json",{});
+const baseOrder=["summary","industry","company","risks","metrics","figures","appendix"];
+const sector=(pack&&pack.reportSections)||[];
+const order=baseOrder.slice();
+if(pack&&pack.id&&pack.id!=="default")order.splice(2,0,"sector");
+if(profile.type!=="auto"&&profile.type!=="mixed"&&profile.type!=="industry"&&profile.type!=="stock"&&profile.type!=="macro")order.push("appendix");
+const mandatory=["summary","industry","company","risks","appendix"];
+const missing=mandatory.filter(x=>order.indexOf(x)<0);
+const out={case:CASE,sectorPack:pack&&pack.id||"default",profile:profile.type||"mixed",order,mandatory,missing,status:missing.length?"invalid":"proposed",sectorSections:sector,rationale:pack?("按行业包 "+pack.label+" 调整章节；保留投研标准骨架"):"无行业包，使用通用骨架",generatedAt:new Date().toISOString()};
+fs.mkdirSync(base,{recursive:true});fs.writeFileSync(path.join(base,"report-structure.json"),JSON.stringify(out,null,2));
+console.log(JSON.stringify({ok:!missing.length,structure:out}));

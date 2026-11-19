@@ -1,0 +1,35 @@
+{
+  "label": "EV/Sales",
+  "required": [
+    "revenue",
+    "multiple",
+    "netCash",
+    "shares"
+  ],
+  "fields": [
+    {
+      "key": "revenue",
+      "label": "营收",
+      "type": "number",
+      "unit": "亿元"
+    },
+    {
+      "key": "multiple",
+      "label": "EV/Sales 倍数",
+      "type": "number",
+      "unit": "x"
+    },
+    {
+      "key": "netCash",
+      "label": "净现金",
+      "type": "number",
+      "unit": "亿元"
+    },
+    {
+      "key": "shares",
+      "label": "股本",
+      "type": "number",
+      "unit": "亿股"
+    }
+  ]
+}

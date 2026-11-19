@@ -1,0 +1,27 @@
+{
+  "id": "chinamoney-shibor-1w",
+  "name": "中国货币网 · SHIBOR 1W",
+  "category": "macro",
+  "kind": "script",
+  "runtime": "node",
+  "script": "scripts/chinamoney-series.js",
+  "args": [
+    "--path",
+    "cm-u-bk-shibor/ShiborHis",
+    "--field",
+    "1W",
+    "--date-field",
+    "showDateCN",
+    "--method",
+    "POST",
+    "--range",
+    "{range}"
+  ],
+  "vars": {
+    "range": "2025-01..2026-11"
+  },
+  "force": true,
+  "tier": "official",
+  "evidenceField": "SHIBOR 1W",
+  "notes": "免费公开；中国货币网（全国银行间同业拆借中心）。"
+}

@@ -1,0 +1,11 @@
+{
+  "id": "eastmoney-gdp",
+  "name": "东方财富 · GDP 累计",
+  "category": "macro",
+  "kind": "json",
+  "url": "https://datacenter-web.eastmoney.com/api/data/v1/get?reportName=RPT_ECONOMY_GDP&columns=ALL&pageSize=8&sortColumns=REPORT_DATE&sortTypes=-1",
+  "force": true,
+  "evidenceField": "GDP 累计同比",
+  "notes": "国内生产总值累计值/同比。",
+  "tier": "market-api"
+}

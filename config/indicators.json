@@ -1,0 +1,257 @@
+{
+  "version": 1,
+  "indicators": [
+    {
+      "id": "cn.cgb.10y.ytm",
+      "name": "中国10年期国债到期收益率",
+      "aliases": [
+        "10y国债",
+        "10年国债",
+        "中国10年期国债",
+        "中债10年",
+        "cgb10y",
+        "10年期国债到期收益率"
+      ],
+      "dimensions": {
+        "country": "CN",
+        "instrument": "CGB",
+        "tenor": "10Y",
+        "metric": "ytm"
+      }
+    },
+    {
+      "id": "cn.credit.spread.aaa",
+      "name": "AAA信用利差",
+      "aliases": [
+        "aaa信用利差",
+        "aaa中短期票据利差",
+        "aaa中票利差"
+      ],
+      "dimensions": {
+        "country": "CN",
+        "instrument": "MTN",
+        "rating": "AAA",
+        "metric": "spread"
+      }
+    },
+    {
+      "id": "cn.credit.spread.aa",
+      "name": "AA信用利差",
+      "aliases": [
+        "aa信用利差",
+        "aa中短期票据利差",
+        "aa中票利差"
+      ],
+      "dimensions": {
+        "country": "CN",
+        "instrument": "MTN",
+        "rating": "AA",
+        "metric": "spread"
+      }
+    },
+    {
+      "id": "cn.credit.spread",
+      "name": "信用利差（AAA/AA）",
+      "aliases": [
+        "信用利差",
+        "中短期票据利差",
+        "中票利差"
+      ],
+      "dimensions": {
+        "country": "CN",
+        "instrument": "MTN",
+        "rating": "AAA/AA",
+        "metric": "spread"
+      }
+    },
+    {
+      "id": "global.dxy.close",
+      "name": "美元指数DXY",
+      "aliases": [
+        "dxy",
+        "美元指数",
+        "ice美元指数",
+        "usdx",
+        "udi"
+      ],
+      "dimensions": {
+        "country": "US",
+        "instrument": "DXY",
+        "metric": "close"
+      }
+    },
+    {
+      "id": "cn.fai.yoy",
+      "name": "固定资产投资同比",
+      "aliases": [
+        "固定资产投资",
+        "固投",
+        "固定资产投资完成额",
+        "固定资产投资同比"
+      ],
+      "dimensions": {
+        "country": "CN",
+        "instrument": "FAI",
+        "metric": "yoy"
+      }
+    },
+    {
+      "id": "cn.exports.usd.yoy",
+      "name": "出口金额同比",
+      "aliases": [
+        "出口金额",
+        "出口同比",
+        "出口金额同比",
+        "出口（美元计价）"
+      ],
+      "dimensions": {
+        "country": "CN",
+        "instrument": "EXPORTS",
+        "currency": "USD",
+        "metric": "yoy"
+      }
+    },
+    {
+      "id": "cn.iva.yoy",
+      "name": "规模以上工业增加值同比",
+      "aliases": [
+        "工业增加值",
+        "规上工业增加值",
+        "规模以上工业增加值",
+        "工业增加值同比"
+      ],
+      "dimensions": {
+        "country": "CN",
+        "instrument": "IVA",
+        "metric": "yoy"
+      }
+    },
+    {
+      "id": "cn.cpi.core.yoy",
+      "name": "核心CPI同比",
+      "aliases": [
+        "核心cpi",
+        "核心居民消费价格",
+        "不包括食品和能源的cpi"
+      ],
+      "dimensions": {
+        "country": "CN",
+        "instrument": "CPI",
+        "metric": "core_yoy"
+      }
+    },
+    {
+      "id": "cn.ppi.industry.yoy",
+      "name": "分行业PPI同比",
+      "aliases": [
+        "分行业ppi",
+        "行业ppi",
+        "工业生产者出厂价格分行业",
+        "分行业工业品价格"
+      ],
+      "dimensions": {
+        "country": "CN",
+        "instrument": "PPI",
+        "metric": "industry_yoy"
+      }
+    },
+    {
+      "id": "cn.dr007",
+      "name": "DR007",
+      "aliases": [
+        "dr007",
+        "存款类机构7天质押式回购",
+        "存款类机构七天质押式回购",
+        "7天质押式回购加权平均利率"
+      ],
+      "dimensions": {
+        "country": "CN",
+        "instrument": "REPO",
+        "tenor": "7D",
+        "metric": "rate"
+      }
+    },
+    {
+      "id": "cn.csi300.vol20d",
+      "name": "沪深300 20日年化波动率",
+      "aliases": [
+        "沪深300波动率",
+        "csi300波动率",
+        "沪深300已实现波动率",
+        "20日年化波动率"
+      ],
+      "dimensions": {
+        "country": "CN",
+        "instrument": "CSI300",
+        "metric": "vol20d"
+      }
+    },
+    {
+      "id": "cn.cpi.yoy",
+      "name": "CPI同比",
+      "aliases": [
+        "cpi",
+        "居民消费价格指数",
+        "cpi同比"
+      ],
+      "dimensions": {
+        "country": "CN",
+        "instrument": "CPI",
+        "metric": "yoy"
+      }
+    },
+    {
+      "id": "cn.ppi.yoy",
+      "name": "PPI同比",
+      "aliases": [
+        "ppi",
+        "工业生产者出厂价格指数",
+        "ppi同比"
+      ],
+      "dimensions": {
+        "country": "CN",
+        "instrument": "PPI",
+        "metric": "yoy"
+      }
+    },
+    {
+      "id": "cn.pmi",
+      "name": "制造业PMI",
+      "aliases": [
+        "pmi",
+        "制造业pmi",
+        "官方制造业pmi"
+      ],
+      "dimensions": {
+        "country": "CN",
+        "instrument": "PMI",
+        "metric": "index"
+      }
+    },
+    {
+      "id": "cn.gdp.yoy",
+      "name": "GDP累计同比",
+      "aliases": [
+        "gdp",
+        "国内生产总值",
+        "gdp同比",
+        "gdp累计同比"
+      ],
+      "dimensions": {
+        "country": "CN",
+        "instrument": "GDP",
+        "metric": "yoy"
+      }
+    },
+    {
+      "id": "cn.special_bond",
+      "name": "地方政府专项债发行进度",
+      "aliases": [
+        "专项债",
+        "新增专项债",
+        "专项债发行进度",
+        "专项债进度"
+      ]
+    }
+  ]
+}

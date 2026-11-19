@@ -1,0 +1,11 @@
+{
+  "id": "cninfo-home",
+  "name": "巨潮资讯 · 首页",
+  "category": "disclosure",
+  "kind": "html",
+  "url": "https://www.cninfo.com.cn/new/index",
+  "force": false,
+  "evidenceField": "上市公司公告入口",
+  "notes": "公告检索需交互；首页仅作入口，具体公告可用 collect get 抓详情。",
+  "tier": "official"
+}

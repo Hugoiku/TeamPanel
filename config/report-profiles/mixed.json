@@ -1,0 +1,14 @@
+{
+  "type": "mixed",
+  "label": "综合报告",
+  "sections": [
+    "summary",
+    "industry",
+    "company",
+    "macro",
+    "risks",
+    "metrics",
+    "figures",
+    "appendix"
+  ]
+}

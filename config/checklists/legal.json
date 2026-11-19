@@ -1,0 +1,58 @@
+{
+  "version": 1,
+  "agent": "legal",
+  "required": [
+    {
+      "id": "mnpi",
+      "name": "MNPI/内幕",
+      "purpose": "是否含未公开重大信息"
+    },
+    {
+      "id": "guarantee",
+      "name": "收益承诺",
+      "purpose": "保本/收益承诺"
+    },
+    {
+      "id": "absolute",
+      "name": "绝对化表述",
+      "purpose": "必然/一定/稳赚"
+    },
+    {
+      "id": "rating_distribution",
+      "name": "评级外发",
+      "purpose": "评级/目标价发布限制"
+    },
+    {
+      "id": "disclaimer",
+      "name": "免责声明",
+      "purpose": "适用对象/用途"
+    },
+    {
+      "id": "data_license",
+      "name": "数据授权/版权",
+      "purpose": "来源许可与引用"
+    },
+    {
+      "id": "export_control",
+      "name": "出口管制/制裁",
+      "purpose": "跨境数据与实体清单"
+    },
+    {
+      "id": "cross_border",
+      "name": "跨境数据",
+      "purpose": "数据出境合规"
+    }
+  ],
+  "optional": [
+    {
+      "id": "anti_bribery",
+      "name": "反腐败/礼品",
+      "purpose": "利益冲突"
+    },
+    {
+      "id": "fair_disclosure",
+      "name": "公平披露",
+      "purpose": "选择性披露"
+    }
+  ]
+}

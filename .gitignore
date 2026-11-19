@@ -1,0 +1,77 @@
+# ============================================================
+# 天枢 · 开源仓库忽略规则
+# 原则：源码与示例可以提交；运行数据、用户研究内容、账密、API Key 一律不提交。
+# ============================================================
+
+# ---- 运行期数据（全部忽略，但保留核心源码 runtime/server、runtime/agents）----
+runtime/*
+!runtime/server/
+!runtime/agents/
+runtime/server/*
+!runtime/server/broker.js
+!runtime/server/test/
+runtime/agents/*
+!runtime/agents/employee.js
+
+# 旧规则兜底（runtime/* 已覆盖，保留可读性）
+runtime/ledger/
+runtime/history/
+runtime/kb/
+runtime/locks/
+runtime/profiles/
+runtime/prompts/
+runtime/dsh-home/
+runtime/agent-runs/
+runtime/agent-loops/
+runtime/auto-runs/
+runtime/data/
+runtime/cache/
+runtime/secrets/
+runtime/work/
+runtime/datatask/
+runtime/jobs/
+runtime/job-runs/
+runtime/broker.log
+runtime/broker.pid
+
+# ---- 用户研究数据 ----
+vault/
+drafts/
+uploads/
+figures/
+abnormal.txt
+intel.md
+rt-cpi.json
+rt-ppi.json
+high-na-euv-reaches-new-readiness-milestone.md
+
+# ---- 账密 / API Key / 本地配置 ----
+.env
+.env.*
+!.env.example
+**/secrets/
+**/*secret*
+**/*credential*
+**/*.pem
+**/*.key
+**/*.p12
+config/desk.local.json
+config/*.local.json
+runtime/secrets/
+
+# ---- 本地第三方技能（许可证/商业数据限制，不入开源仓库）----
+.agents/
+skills/hithink-finance/
+skills/lieflat-less-ai-tone/
+skills/office-xlsx/
+skills-lock.json
+
+# ---- 依赖 / 生成物 / 系统文件 ----
+node_modules/
+runtime/py/
+runtime/test-tmp/
+.dsh-test/
+.DS_Store
+*.log
+*.pid
+dashboard/mockup.html

@@ -1,0 +1,98 @@
+{
+  "version": 1,
+  "agent": "stock",
+  "required": [
+    {
+      "id": "business_model",
+      "name": "商业模式与护城河",
+      "purpose": "收入来源、壁垒、可持续性"
+    },
+    {
+      "id": "segment_mix",
+      "name": "分产品/分地区",
+      "purpose": "增长质量与集中度"
+    },
+    {
+      "id": "financial_quality",
+      "name": "财务质量",
+      "purpose": "收入/毛利/现金流/ROIC/杠杆"
+    },
+    {
+      "id": "working_capital",
+      "name": "营运资本",
+      "purpose": "应收/存货/预付/现金流质量"
+    },
+    {
+      "id": "accounting_quality",
+      "name": "会计质量",
+      "purpose": "非经常性损益、政策、减值"
+    },
+    {
+      "id": "capex_projects",
+      "name": "资本开支与项目",
+      "purpose": "产能、投产、回报"
+    },
+    {
+      "id": "governance",
+      "name": "治理与股东",
+      "purpose": "股权、质押、减持、关联交易"
+    },
+    {
+      "id": "valuation",
+      "name": "估值",
+      "purpose": "DCF/可比/历史区间/隐含预期"
+    },
+    {
+      "id": "scenarios_target",
+      "name": "情景与目标价",
+      "purpose": "三情景、概率、目标区间"
+    },
+    {
+      "id": "catalysts_risks",
+      "name": "催化剂与风险",
+      "purpose": "可证伪的催化剂/风险"
+    },
+    {
+      "id": "consensus",
+      "name": "一致预期与分歧",
+      "purpose": "市场预期差"
+    },
+    {
+      "id": "liquidity",
+      "name": "流动性与交易",
+      "purpose": "成交、股东结构、冲击成本"
+    },
+    {
+      "id": "data_quality",
+      "name": "数据与口径",
+      "purpose": "财报日期、调整、单位"
+    }
+  ],
+  "optional": [
+    {
+      "id": "management",
+      "name": "管理层与战略",
+      "purpose": "执行力与资本配置"
+    },
+    {
+      "id": "dividend_buyback",
+      "name": "分红/回购",
+      "purpose": "股东回报"
+    },
+    {
+      "id": "esg_litigation",
+      "name": "ESG/诉讼",
+      "purpose": "尾部风险"
+    },
+    {
+      "id": "peer_history",
+      "name": "可比历史估值",
+      "purpose": "估值锚"
+    },
+    {
+      "id": "event_calendar",
+      "name": "事件日历",
+      "purpose": "解禁、财报、招标"
+    }
+  ]
+}

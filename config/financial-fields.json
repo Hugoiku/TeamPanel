@@ -1,0 +1,191 @@
+{
+  "version": 1,
+  "fields": {
+    "revenue": {
+      "label": "营业收入",
+      "aliases": [
+        "revenue",
+        "营业收入",
+        "营收",
+        "收入"
+      ],
+      "unit": "亿元",
+      "period": "FY"
+    },
+    "gross_margin": {
+      "label": "毛利率",
+      "aliases": [
+        "gross_margin",
+        "毛利率",
+        "grossMargin"
+      ],
+      "unit": "%",
+      "period": "FY"
+    },
+    "operating_margin": {
+      "label": "营业利润率",
+      "aliases": [
+        "operating_margin",
+        "营业利润率",
+        "op_of_gr"
+      ],
+      "unit": "%",
+      "period": "FY"
+    },
+    "net_profit": {
+      "label": "归母净利润",
+      "aliases": [
+        "net_profit",
+        "归母净利润",
+        "净利润",
+        "netProfit"
+      ],
+      "unit": "亿元",
+      "period": "FY"
+    },
+    "capex": {
+      "label": "资本开支",
+      "aliases": [
+        "capex",
+        "资本开支",
+        "资本性支出"
+      ],
+      "unit": "亿元",
+      "period": "FY"
+    },
+    "fcf": {
+      "label": "自由现金流",
+      "aliases": [
+        "fcf",
+        "自由现金流",
+        "freeCashFlow"
+      ],
+      "unit": "亿元",
+      "period": "FY"
+    },
+    "net_debt": {
+      "label": "净负债",
+      "aliases": [
+        "net_debt",
+        "净负债",
+        "有息负债"
+      ],
+      "unit": "亿元",
+      "period": "FY"
+    },
+    "shares": {
+      "label": "总股本",
+      "aliases": [
+        "shares",
+        "总股本",
+        "股本"
+      ],
+      "unit": "亿股",
+      "period": "FY"
+    },
+    "eps": {
+      "label": "每股收益",
+      "aliases": [
+        "eps",
+        "每股收益"
+      ],
+      "unit": "元",
+      "period": "FY"
+    },
+    "net_interest_margin": {
+      "label": "净息差",
+      "aliases": [
+        "net_interest_margin",
+        "净息差",
+        "NIM"
+      ],
+      "unit": "%",
+      "period": "FY"
+    },
+    "npl_ratio": {
+      "label": "不良贷款率",
+      "aliases": [
+        "npl_ratio",
+        "不良率",
+        "不良贷款率"
+      ],
+      "unit": "%",
+      "period": "FY"
+    },
+    "provision_coverage": {
+      "label": "拨备覆盖率",
+      "aliases": [
+        "provision_coverage",
+        "拨备覆盖率"
+      ],
+      "unit": "%",
+      "period": "FY"
+    },
+    "cet1_ratio": {
+      "label": "核心一级资本充足率",
+      "aliases": [
+        "cet1_ratio",
+        "核心一级资本充足率",
+        "CET1"
+      ],
+      "unit": "%",
+      "period": "FY"
+    },
+    "core_tier1_ratio": {
+      "label": "一级资本充足率",
+      "aliases": [
+        "core_tier1_ratio",
+        "一级资本充足率"
+      ],
+      "unit": "%",
+      "period": "FY"
+    },
+    "loan_deposit_ratio": {
+      "label": "贷存比",
+      "aliases": [
+        "loan_deposit_ratio",
+        "贷存比"
+      ],
+      "unit": "%",
+      "period": "FY"
+    },
+    "nbv": {
+      "label": "新业务价值",
+      "aliases": [
+        "nbv",
+        "新业务价值",
+        "NBV"
+      ],
+      "unit": "亿元",
+      "period": "FY"
+    },
+    "ev": {
+      "label": "内含价值",
+      "aliases": [
+        "ev",
+        "内含价值",
+        "EV"
+      ],
+      "unit": "亿元",
+      "period": "FY"
+    },
+    "solvency_ratio": {
+      "label": "偿付能力充足率",
+      "aliases": [
+        "solvency_ratio",
+        "偿付能力充足率"
+      ],
+      "unit": "%",
+      "period": "FY"
+    },
+    "combined_ratio": {
+      "label": "综合成本率",
+      "aliases": [
+        "combined_ratio",
+        "综合成本率"
+      ],
+      "unit": "%",
+      "period": "FY"
+    }
+  }
+}

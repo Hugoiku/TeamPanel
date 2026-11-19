@@ -1,0 +1,121 @@
+{
+  "case": "case-2026-003",
+  "agent": "macro",
+  "goal": "判断 2026Q4–2027Q2 政策/流动性/汇率/财政方向，以及对锗产业链的含义",
+  "planner": {
+    "provider": "opencode-go",
+    "model": "deepseek-v4.1-flash",
+    "note": "先用默认模型；规划器候选替换点在 config.models.planner"
+  },
+  "routes": {
+    "fast": {
+      "provider": "opencode-go",
+      "model": "deepseek-v4.1-flash"
+    },
+    "strong": {
+      "provider": "opencode-go",
+      "model": "deepseek-v4.1-flash"
+    },
+    "verify": {
+      "provider": "opencode-go",
+      "model": "deepseek-v4.1-flash"
+    }
+  },
+  "steps": [
+    {
+      "id": "S0",
+      "name": "定题与取数",
+      "tier": "fast",
+      "depends": [],
+      "task": "确认本稿要回答的问题；用 market cpi/pmi/ppi 取宏观数据并写入 evidence/sources.jsonl",
+      "outputs": [
+        "evidence/sources.jsonl"
+      ]
+    },
+    {
+      "id": "S1",
+      "name": "现状仪表盘",
+      "tier": "fast",
+      "depends": [
+        "S0"
+      ],
+      "task": "增长/通胀/金融条件三张表，数字标 [S#]，缺的标待补",
+      "outputs": [
+        "research/macro.md §2"
+      ]
+    },
+    {
+      "id": "S2",
+      "name": "宏观季节",
+      "tier": "strong",
+      "depends": [
+        "S1"
+      ],
+      "task": "增长×通胀四象限定位，说明政策约束来自哪里",
+      "outputs": [
+        "research/macro.md §3"
+      ]
+    },
+    {
+      "id": "S3",
+      "name": "需求拆解",
+      "tier": "strong",
+      "depends": [
+        "S2"
+      ],
+      "task": "GDP=C+I+G+(X−M) 拆解，谁拉动谁拖累、可持续性",
+      "outputs": [
+        "research/macro.md §4"
+      ]
+    },
+    {
+      "id": "S4",
+      "name": "政策预判",
+      "tier": "strong",
+      "depends": [
+        "S3"
+      ],
+      "task": "信用传导/地产链条/汇率约束下的政策方向与掣肘",
+      "outputs": [
+        "research/macro.md §5"
+      ]
+    },
+    {
+      "id": "S5",
+      "name": "市场验证",
+      "tier": "fast",
+      "depends": [
+        "S4"
+      ],
+      "task": "用利率/信用利差/汇率/波动率验证判断；取不到报 need",
+      "outputs": [
+        "research/macro.md §6"
+      ]
+    },
+    {
+      "id": "S6",
+      "name": "情景与风险",
+      "tier": "strong",
+      "depends": [
+        "S5"
+      ],
+      "task": "写情景与四类风险、最大触发器与传导链；收口 macro.json claims",
+      "outputs": [
+        "research/macro.md §7",
+        "research/macro.json"
+      ]
+    },
+    {
+      "id": "S7",
+      "name": "自检与门禁",
+      "tier": "verify",
+      "depends": [
+        "S6"
+      ],
+      "task": "对照 ROLE 模板自检，报 G-DATA；缺的写 need",
+      "outputs": [
+        "G-DATA gate"
+      ]
+    }
+  ]
+}

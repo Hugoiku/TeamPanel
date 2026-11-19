@@ -1,0 +1,53 @@
+{
+  "version": 1,
+  "agent": "trader",
+  "required": [
+    {
+      "id": "liquidity",
+      "name": "流动性",
+      "purpose": "成交额、盘口、冲击成本"
+    },
+    {
+      "id": "entry_exit",
+      "name": "入场/退出",
+      "purpose": "触发条件、止损"
+    },
+    {
+      "id": "position_sizing",
+      "name": "仓位",
+      "purpose": "风险预算/相关性"
+    },
+    {
+      "id": "cost_slippage",
+      "name": "成本/滑点",
+      "purpose": "佣金、印花税、冲击"
+    },
+    {
+      "id": "risk_limits",
+      "name": "风险限额",
+      "purpose": "单票/行业/回撤"
+    },
+    {
+      "id": "event_calendar",
+      "name": "事件日历",
+      "purpose": "财报/解禁/政策"
+    },
+    {
+      "id": "compliance",
+      "name": "合规限制",
+      "purpose": "禁投/限制清单"
+    }
+  ],
+  "optional": [
+    {
+      "id": "execution_plan",
+      "name": "执行方案",
+      "purpose": "分批/TWAP/VWAP"
+    },
+    {
+      "id": "hedge",
+      "name": "对冲",
+      "purpose": "beta/行业对冲"
+    }
+  ]
+}

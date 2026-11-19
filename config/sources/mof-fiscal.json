@@ -1,0 +1,22 @@
+{
+  "id": "mof-fiscal",
+  "name": "财政部 · 财政收支最新发布",
+  "category": "macro",
+  "kind": "script",
+  "runtime": "python",
+  "script": "scripts/stats_release.py",
+  "args": [
+    "--list",
+    "{list}",
+    "--keyword",
+    "{keyword}"
+  ],
+  "vars": {
+    "list": "https://www.mof.gov.cn/gkml/caizhengshuju/",
+    "keyword": "财政收支"
+  },
+  "force": false,
+  "tier": "official",
+  "evidenceField": "一般公共预算支出/专项债",
+  "notes": "通用发布页解析；换 keyword 可取专项债/预算执行。"
+}

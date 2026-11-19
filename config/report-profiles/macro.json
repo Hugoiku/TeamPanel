@@ -1,0 +1,12 @@
+{
+  "type": "macro",
+  "label": "宏观报告",
+  "sections": [
+    "summary",
+    "macro",
+    "risks",
+    "metrics",
+    "figures",
+    "appendix"
+  ]
+}

@@ -1,0 +1,14 @@
+{
+  "id": "eastmoney-quote",
+  "name": "东方财富 · 个股行情",
+  "category": "market",
+  "kind": "json",
+  "url": "https://push2.eastmoney.com/api/qt/stock/get?secid={secid}&fields=f43,f44,f45,f46,f57,f58,f60,f116,f117,f162,f167,f169,f170",
+  "vars": {
+    "secid": "0.002428"
+  },
+  "force": true,
+  "evidenceField": "个股实时行情（现价/涨跌幅/PE/PB）",
+  "notes": "secid 规则：沪市 1.代码，深市 0.代码；示例为 002428 云南锗业。",
+  "tier": "market-api"
+}

@@ -1,0 +1,14 @@
+{
+  "id": "tushare-sf-month",
+  "name": "Tushare · 社会融资规模月度增量",
+  "category": "macro",
+  "kind": "script",
+  "runtime": "node",
+  "script": "scripts/tushare-sf.js",
+  "args": ["--range", "{range}"],
+  "vars": { "range": "2025-01..2026-10" },
+  "force": true,
+  "tier": "market-api",
+  "evidenceField": "社会融资规模月度增量",
+  "notes": "Tushare sf_month：month/inc_month/inc_cumval/stk_endval；当前 records 用 inc_month（亿元）。"
+}

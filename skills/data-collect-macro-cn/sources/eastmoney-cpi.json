@@ -1,0 +1,12 @@
+{
+  "id": "eastmoney-cpi",
+  "name": "东方财富 · CPI 月度",
+  "category": "macro",
+  "kind": "json",
+  "url": "https://datacenter-web.eastmoney.com/api/data/v1/get?reportName=RPT_ECONOMY_CPI&columns=ALL&pageSize=12&sortColumns=REPORT_DATE&sortTypes=-1",
+  "force": true,
+  "evidenceField": "CPI 月度数据",
+  "evidenceValue": "见原始 JSON（含 REPORT_DATE / 同比 / 环比）",
+  "notes": "全国居民消费价格指数；字段口径见返回 JSON。",
+  "tier": "market-api"
+}

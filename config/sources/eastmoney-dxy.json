@@ -1,0 +1,11 @@
+{
+  "id": "eastmoney-dxy",
+  "name": "东方财富 · 美元指数 DXY（UDI）",
+  "category": "macro",
+  "kind": "json",
+  "url": "https://push2.eastmoney.com/api/qt/stock/get?secid=100.UDI&fields=f43,f57,f58,f60,f170",
+  "force": true,
+  "tier": "market-api",
+  "evidenceField": "美元指数 DXY（ICE UDI）",
+  "notes": "东财 secid=100.UDI 为美元指数；f43 通常放大 100 倍（10177 = 101.77），使用前请除以 100。"
+}

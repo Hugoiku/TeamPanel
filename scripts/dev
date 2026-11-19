@@ -1,0 +1,73 @@
+#!/usr/bin/env node
+/**
+ * 一条命令起整套：Broker + 实时看板 + 自动开浏览器
+ *   ./scripts/dev                 # 默认 7801，自动打开 /live
+ *   ./scripts/dev --port 7810 --no-open
+ */
+"use strict";
+const { spawn, execFileSync } = require("child_process");
+const path = require("path");
+const http = require("http");
+
+const ROOT = path.resolve(__dirname, "..");
+const args = process.argv.slice(2);
+const wantPort = parseInt((args.indexOf("--port") >= 0 ? args[args.indexOf("--port") + 1] : "7801"), 10);
+const noOpen = args.indexOf("--no-open") >= 0;
+const CASE = (args.indexOf("--case") >= 0 ? args[args.indexOf("--case") + 1] : "case-2026-001");
+
+let port = wantPort, child = null, tries = 0;
+
+function healthy(p) {
+  return new Promise(resolve => {
+    const req = http.get("http://127.0.0.1:" + p + "/api/health", res => {
+      let d = ""; res.on("data", c => d += c);
+      res.on("end", () => { try { resolve(JSON.parse(d).ok === true); } catch (_) { resolve(false); } });
+    });
+    req.on("error", () => resolve(false));
+    req.setTimeout(800, () => { req.destroy(); resolve(false); });
+  });
+}
+function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
+
+async function main() {
+  for (tries = 0; tries < 10; tries++) {
+    if (await healthy(port)) {
+      console.log("[dev] 端口 " + port + " 上已经有一个 broker，直接用它");
+      break;
+    }
+    child = spawn(process.execPath, [path.join(ROOT, "runtime/server/broker.js"), "--port", String(port)],
+      { cwd: ROOT, stdio: ["ignore", "pipe", "pipe"] });
+    let failed = false;
+    child.stderr.on("data", d => {
+      const s = String(d);
+      if (/EADDRINUSE/.test(s)) failed = true;
+      else process.stderr.write("[broker] " + s);
+    });
+    child.stdout.on("data", d => process.stdout.write(String(d)));
+    for (let i = 0; i < 20; i++) {
+      await sleep(150);
+      if (failed) break;
+      if (await healthy(port)) break;
+    }
+    if (await healthy(port)) break;
+    if (child) { try { child.kill(); } catch (_) {} }
+    port += 1;
+    console.log("[dev] 端口被占用，试 " + port);
+  }
+
+  const url = "http://127.0.0.1:" + port + "/live?case=" + encodeURIComponent(CASE);
+  console.log("");
+  console.log("[dev] 实时看板  " + url);
+  console.log("[dev] 剧本原型  http://127.0.0.1:" + port + "/?proto=1");
+  console.log("[dev] Ctrl-C 结束");
+  console.log("");
+  if (!noOpen) {
+    try { execFileSync("open", [url]); } catch (_) { console.log("[dev] 自动打开浏览器失败，请手动打开上面的 URL"); }
+  }
+
+  const stop = () => { if (child) { try { child.kill("SIGINT"); } catch (_) {} } process.exit(0); };
+  process.on("SIGINT", stop);
+  process.on("SIGTERM", stop);
+  if (child) child.on("exit", code => { console.log("[dev] broker 退出（" + code + "）"); process.exit(code || 0); });
+}
+main();

@@ -1,0 +1,11 @@
+{
+  "id": "chinabond-10y",
+  "name": "中债 · 10年期国债到期收益率",
+  "category": "macro",
+  "kind": "script",
+  "script": "scripts/chinabond.py",
+  "force": true,
+  "tier": "official",
+  "evidenceField": "中国10年期国债到期收益率（当前曲线）",
+  "notes": "浏览器抓取中债收益率曲线当前 10Y；历史区间需逐日查询/另接数据源。"
+}

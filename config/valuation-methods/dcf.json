@@ -1,0 +1,35 @@
+{
+  "label": "DCF",
+  "required": [
+    "revenue2026e",
+    "wacc",
+    "g",
+    "terminalMargin"
+  ],
+  "fields": [
+    {
+      "key": "revenue2026e",
+      "label": "2026E 营收",
+      "type": "number",
+      "unit": "亿元"
+    },
+    {
+      "key": "wacc",
+      "label": "WACC",
+      "type": "percent",
+      "unit": ""
+    },
+    {
+      "key": "g",
+      "label": "永续增长 g",
+      "type": "percent",
+      "unit": ""
+    },
+    {
+      "key": "terminalMargin",
+      "label": "终值 FCF 利润率",
+      "type": "percent",
+      "unit": ""
+    }
+  ]
+}

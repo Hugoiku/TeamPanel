@@ -1,0 +1,11 @@
+{
+  "id": "usgs-germanium",
+  "name": "USGS · Germanium 年报 PDF",
+  "category": "industry",
+  "kind": "pdf",
+  "url": "https://pubs.usgs.gov/periodicals/mcs2025/mcs2025-germanium.pdf",
+  "force": true,
+  "evidenceField": "全球锗产量/储量（USGS）",
+  "notes": "国际供应格局权威来源；PDF 文本提取后引用页码。",
+  "tier": "official"
+}

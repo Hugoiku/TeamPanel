@@ -1,0 +1,13 @@
+{
+  "type": "industry",
+  "label": "行业报告",
+  "sections": [
+    "summary",
+    "industry",
+    "macro",
+    "risks",
+    "metrics",
+    "figures",
+    "appendix"
+  ]
+}

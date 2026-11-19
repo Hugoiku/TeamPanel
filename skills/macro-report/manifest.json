@@ -1,0 +1,20 @@
+{
+  "id": "macro-report",
+  "name": "宏观研究分析报告装配",
+  "version": "1.0.0",
+  "description": "把宏观底稿、证据池、图表和上传数据装配成规范化 Word 研究报告。",
+  "author": "AlphaDesk",
+  "license": "MIT",
+  "requires": {
+    "python": ["docx", "openpyxl"],
+    "node": [],
+    "env": [],
+    "optional": ["playwright-chromium"]
+  },
+  "assign": ["macro"],
+  "commands": ["node scripts/macro_report.js", "POST /api/report/macro"],
+  "sources": [],
+  "scripts": ["macro_report.js", "build_macro_report.py", "md_to_docx.py"],
+  "smoke": [],
+  "notes": "前置：research/macro.md、evidence/sources.jsonl、相关图表/上传数据；输出 reports/macro-report.docx。"
+}

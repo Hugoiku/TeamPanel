@@ -1,0 +1,53 @@
+{
+  "label": "生物科技",
+  "keywords": [
+    "生物科技",
+    "创新药",
+    "临床",
+    "管线",
+    "FDA",
+    "NMPA",
+    "rNPV"
+  ],
+  "kpis": [
+    "管线数量",
+    "临床阶段",
+    "峰值销售",
+    "成功率",
+    "现金 runway"
+  ],
+  "valuationMethods": [
+    "rnpv",
+    "sotp",
+    "comps"
+  ],
+  "reportSections": [
+    "投委会速览",
+    "管线",
+    "临床数据",
+    "审批路径",
+    "商业化",
+    "估值",
+    "风险"
+  ],
+  "sourceHints": [
+    "ClinicalTrials.gov",
+    "FDA",
+    "NMPA",
+    "公司 IR"
+  ],
+  "reviewChecks": [
+    "临床终点",
+    "样本量",
+    "适应症"
+  ],
+  "tushareL1": [
+    "医药生物"
+  ],
+  "tushareL2": [
+    "化学制药",
+    "生物制品",
+    "医疗服务"
+  ],
+  "tushareL3": []
+}
