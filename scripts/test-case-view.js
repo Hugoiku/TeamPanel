@@ -48,6 +48,11 @@ assert.strictEqual(stale.phase, "REPORT_STALE");
 assert.strictEqual(stale.primaryAction.id, "regenerate_report");
 assert.ok(stale.blocking.some(x => x.id === "report:stale"));
 
+const staleCross = view({ plans: [{ id: "P1", status: "approved" }], works: [{ id: "W1", state: "done" }], finalExists: true,
+  reportStale: true, crossReviewHigh: 2, crossReviewIssues: [{ from: "macro", to: "industry", message: "scope leak" }] });
+assert.strictEqual(staleCross.primaryAction.id, "fix_cross_review");
+assert.ok(staleCross.blocking.some(x => x.id === "review:cross:high"));
+
 const signed = view({ plans: [{ id: "P1", status: "approved" }], works: [{ id: "W1", state: "done" }], finalExists: true,
   reviews: [{ service: "audit", status: "clean", path: "reports/final-report.docx" },
     { service: "legal", status: "clean", path: "reports/final-report.docx" }],

@@ -145,7 +145,11 @@ function nextAction(phase, input) {
   if (phase === "READY_TO_RUN") return { id: "start_execution", label: "启动执行", owner: "system", enabled: true };
   if (phase === "DATA_GAP") return { id: "fill_data", label: "去补数据", owner: "human", enabled: true };
   if (phase === "DRAFT_READY") return { id: "generate_report", label: "生成最终报告", owner: "system", enabled: true };
-  if (phase === "REPORT_STALE") return { id: "regenerate_report", label: "重新生成报告", owner: "system", enabled: true };
+  if (phase === "REPORT_STALE") {
+    if (input.crossReview && input.crossReview.high > 0)
+      return { id: "fix_cross_review", label: "处理交叉复核", owner: "human", enabled: true };
+    return { id: "regenerate_report", label: "重新生成报告", owner: "system", enabled: true };
+  }
   if (phase === "REVIEW_PENDING") {
     const missing = [report.audit === "missing" ? "audit" : "", report.legal === "missing" ? "legal" : ""].filter(Boolean);
     if (missing.length) return { id: "request_review", label: "发起" + (missing.includes("audit") ? "审计" : "") + (missing.includes("legal") ? "法务" : "") + "复核", owner: "human", enabled: true, services: missing };
@@ -180,6 +184,11 @@ function buildInbox(phase, input) {
   if (report.exists && report.stale) inbox.push({ id: "report:stale", type: "report", severity: "high",
     title: "报告已过期，需要重新生成", action: "regenerate_report",
     detail: (report.staleReasons || []).slice(0, 3).join("；") });
+  if (input.crossReview && input.crossReview.high > 0) inbox.push({
+    id: "review:cross:high", type: "cross_review", severity: "high",
+    title: "交叉复核 high " + input.crossReview.high + " 项", action: "fix_cross_review",
+    detail: (input.crossReview.issues || []).slice(0, 3).map(x => x.message || x.type || "").join("；")
+  });
   if (report.exists && report.audit === "missing") inbox.push({ id: "review:audit:missing", type: "review", severity: "warn",
     title: "尚未发起审计复核", action: "request_review", ref: "audit" });
   if (report.exists && report.legal === "missing") inbox.push({ id: "review:legal:missing", type: "review", severity: "warn",
@@ -207,8 +216,9 @@ function buildCaseView(opts) {
   const report = reportSummary(caseDir, opts.reviews, opts.signatures, opts.finalExists);
   report.stale = !!opts.reportStale;
   report.staleReasons = opts.staleReasons || [];
+  const crossReview = { high: Number(opts.crossReviewHigh) || 0, issues: opts.crossReviewIssues || [] };
   const input = { plans: opts.plans || [], works: opts.works || [], needs: opts.needs || [],
-    report, evidence, claims, briefs };
+    report, evidence, claims, briefs, crossReview };
   const phase = derivePhase(input);
   const action = nextAction(phase, input);
   const inbox = buildInbox(phase, input);
@@ -227,7 +237,9 @@ function buildCaseView(opts) {
         reason: n.waiveReason || n.answer || ""
       })).slice(-50)
     },
-    report: { exists: report.exists, audit: report.audit, legal: report.legal, stale: report.stale, signed: report.signed }
+    report: { exists: report.exists, audit: report.audit, legal: report.legal, stale: report.stale, signed: report.signed },
+    crossReview: { high: (input.crossReview && input.crossReview.high) || 0,
+      issues: (input.crossReview && input.crossReview.issues) || [] }
   };
   return { case: caseId, revision: opts.revision || 0, phase, phaseLabel: PHASE_LABEL[phase] || phase,
     stage: USER_STAGE[phase] || phase, stageLabel: USER_STAGE[phase] || phase,

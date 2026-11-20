@@ -5764,20 +5764,22 @@ button.primary{background:#2563eb;border-color:#2563eb;color:#fff}
         var old = $("nextStepBanner"); if (old) old.style.display = "none";
         var act = v.primaryAction || {};
         var q = v.quality || {};
-        var h = '<div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">' +
-          '<b>现在：' + esc(v.stageLabel || v.phaseLabel || v.phase || "") + '</b>' +
-          '<span style="color:#64748b;font-size:10px">' + esc((v.blocking || []).length ? ("阻塞 " + v.blocking.length + " 项") : "无高优先级阻塞") + '</span>' +
-          '<span style="flex:1"></span>' +
-          (act.id && act.id !== "wait" ? '<button class="primary" data-case-action="' + esc(act.id) + '"' + (act.enabled === false ? ' disabled style="opacity:.6"' : '') + '>' + esc(act.label || act.id) + '</button>' : '<span style="font-size:10px;color:#64748b">' + esc(act.label || "等待系统") + '</span>') +
-          '</div>' +
-          '<div style="font-size:9.5px;color:#64748b;margin-top:4px">证据 ' + ((q.evidence && q.evidence.verified) || 0) + '/' + ((q.evidence && q.evidence.total) || 0) +
-          ' · claim ' + ((q.claims && q.claims.mapped) || 0) + '/' + ((q.claims && q.claims.total) || 0) +
-          ' · brief ' + ((q.briefs && q.briefs.complete) || 0) + '/' + ((q.briefs && q.briefs.total) || 0) +
-          (q.report && q.report.exists ? (' · 报告 ' + (q.report.stale ? "已过期" : (q.report.signed ? "已签发" : "待复核/签发"))) : '') + '</div>';
-        var high = (v.blocking || []).slice(0, 2);
-        if (high.length) h += '<div style="margin-top:3px;font-size:9px;color:#b45309">' + high.map(function (x) { return esc(x.title || ""); }).join("；") + '</div>';
+        var high = (v.blocking || [])[0] || {};
+        var match = (v.blocking || []).filter(function (x) { return x.action === act.id; })[0];
+        var reason = (match && match.title) || high.title || (act.label || "等待系统");
+        var h = '<div style="display:flex;align-items:center;gap:6px;width:100%">' +
+          '<b style="font-size:11px">' + esc(v.stageLabel || v.phaseLabel || v.phase || "") + '</b>' +
+          ((v.blocking || []).length ? '<span style="font-size:9px;color:#b45309">阻塞 ' + v.blocking.length + '</span>' : '<span style="font-size:9px;color:#64748b">正常</span>') +
+          '<span style="flex:1"></span></div>' +
+          '<div style="font-size:9.5px;color:#475569;line-height:1.45;margin-top:3px;width:100%">' + esc(String(reason).slice(0, 64)) + '</div>' +
+          '<div style="display:flex;align-items:center;gap:5px;margin-top:5px;width:100%">' +
+          (act.id && act.id !== "wait" ? '<button class="primary" data-case-action="' + esc(act.id) + '"' + (act.enabled === false ? ' disabled style="opacity:.6;font-size:9px;padding:2px 7px"' : ' style="font-size:9px;padding:2px 7px"') + '>' + esc(act.label || act.id) + '</button>' : '<span style="font-size:9.5px;color:#64748b">' + esc(act.label || "等待系统") + '</span>') +
+          ((v.blocking || []).length ? '<button class="skbtn" data-case-action="inspect_blockers" style="font-size:9px;padding:2px 7px">原因</button>' : '') +
+          '</div>';
         el.innerHTML = h;
         el.style.display = "flex";
+        el.style.flexDirection = "column";
+        el.style.alignItems = "stretch";
         var sb = $("btnSign");
         if (sb) {
           var canSign = v.phase === "READY_TO_SIGN";
@@ -8160,6 +8162,20 @@ button.primary{background:#2563eb;border-color:#2563eb;color:#fff}
           body: JSON.stringify({ case: CASE_ID, by: "you" }) }).then(function (r) { return r.json(); })
           .then(function (j) { toast(j.error ? ("最终报告失败：" + j.error) : "最终报告已生成"); livePoll(); })
           .catch(function (e) { toast("生成失败：" + (e && e.message || e)); });
+        return;
+      }
+      if (ca === "inspect_blockers" || ca === "fix_cross_review") {
+        var vv = liveCaseView || {};
+        var items = (vv.blocking || []).slice(0, 8);
+        var cr = ((vv.quality || {}).crossReview || {}).issues || [];
+        var h = '';
+        if (items.length) h += items.map(function (x) {
+          return '<div style="padding:5px 0;border-bottom:1px dashed #eef2f7;font-size:10px"><b style="color:#b45309">' + esc(x.title || "") + '</b>' +
+            (x.detail ? '<div style="color:#64748b;font-size:9px;line-height:1.45">' + esc(String(x.detail).slice(0, 240)) + '</div>' : '') + '</div>';
+        }).join("");
+        if (cr.length) h += '<div style="margin-top:8px;font-size:10px;color:#334155"><b>交叉复核 high ' + cr.length + '</b></div>' +
+          cr.map(function (x) { return '<div style="padding:4px 0;font-size:9.5px;color:#475569;border-top:1px dashed #f1f5f9">' + esc(x.from || "") + ' → ' + esc(x.to || "") + '：' + esc(String(x.message || "").slice(0, 220)) + '</div>'; }).join("");
+        showInfoDetail("当前阻塞原因", h || '<div class="empty">当前没有阻塞项</div>');
         return;
       }
       if (ca === "request_review") {

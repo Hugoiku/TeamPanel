@@ -6270,6 +6270,9 @@ function ensureFinalReview(caseId, service, rel, version, requester) {
       const finalExists = fs.existsSync(vaultPath(caseId, "reports/final-report.docx"));
       let consistency = null;
       try { consistency = reportConsistency(caseId); } catch (e) {}
+      let crossReview = null;
+      try { crossReview = JSON.parse(fs.readFileSync(vaultPath(caseId, "research/cross-review.json"), "utf8")); } catch (e) {}
+      const crossHighIssues = ((crossReview && crossReview.issues) || []).filter(x => x.severity === "high");
       const view = caseView.buildCaseView({
         caseId,
         plans: plans.get(caseId) || [],
@@ -6280,6 +6283,8 @@ function ensureFinalReview(caseId, service, rel, version, requester) {
         finalExists,
         reportStale: !!(consistency && consistency.stale),
         staleReasons: (consistency && consistency.mismatches || []).map(x => x.path || x.field || String(x)).slice(0, 6),
+        crossReviewHigh: crossHighIssues.length,
+        crossReviewIssues: crossHighIssues.slice(0, 8).map(x => ({ type: x.type || "", from: x.from || "", to: x.to || "", message: x.message || "" })),
         revision: S.seq
       });
       return json(res, 200, view);
