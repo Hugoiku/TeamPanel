@@ -38,6 +38,7 @@ function contractPrompt(agent, caseId, task, round, maxRounds, prev, work) {
     '  "openQuestions": ["还没解决的问题"],',
     '  "needs": [{"kind":"data","title":"缺什么","detail":"用来干什么"}],',
     '  "subagents": [{"agent":"stock","task":"窄任务，例如查某公司订单"}],',
+    '  "usedKnowledge": ["S1", "M1"],',
     '  "confidence": 0.7',
     "}",
     "如果 status=done，openQuestions/needs 应为空；如果还需要下一轮，status=continue。",
@@ -138,8 +139,10 @@ function contractPrompt(agent, caseId, task, round, maxRounds, prev, work) {
       }
       if (ok && !outputs.length && Array.isArray(work.outputs)) outputs = work.outputs.slice();
     }
+    const usedKnowledge = (state.contract && Array.isArray(state.contract.usedKnowledge))
+      ? state.contract.usedKnowledge.map(String).slice(0, 50) : [];
     const body = { case: caseId, id: workId, owner, leaseId: work.leaseId || "", ok, partial, cancelled,
-      outputs, error: state.error || "", needsReview, loopId: id, gate: state.gate || null };
+      outputs, usedKnowledge, error: state.error || "", needsReview, loopId: id, gate: state.gate || null };
     let rr = { status: 0, body: {} };
     try { rr = await lib.api("POST", "/api/work/finish", body); } catch (e) { rr = { status: 0, body: { error: String(e.message || e) } }; }
     lib.appendTrace(state, "work.finish", rr.status === 200 ? "ok" : ("failed: " + ((rr.body && rr.body.error) || rr.status)));

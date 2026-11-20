@@ -4441,6 +4441,7 @@ const server = http.createServer(async (req, res) => {
       w.error = String(b.error || "").slice(0, 1000);
       w.needsReview = !!b.needsReview && !ok && !cancelled;
       w.gate = (b.gate && typeof b.gate === "object") ? b.gate : (w.gate || null);
+      if (Array.isArray(b.usedKnowledge)) w.usedKnowledge = b.usedKnowledge.map(String).slice(0, 50);
       if (b.loopId) w.loopId = String(b.loopId).slice(0, 40);
       // WorkItem 级 token 预算：超限即失败，且不把结果传给下游。
       if (w.maxTokens > 0 && (w.tokens || 0) > w.maxTokens) {
