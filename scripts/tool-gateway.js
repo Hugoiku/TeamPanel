@@ -58,6 +58,13 @@ const TOOLS = {
     risk: "low", method: "GET", path: "/api/plans", caseQuery: true,
     inputSchema: { type: "object", properties: { case: { type: "string" } }, required: ["case"] }
   },
+  "knowledge.search": {
+    description: "检索本 case 的只读知识视图（证据/claim），按状态/类型过滤，供员工判断是否使用",
+    risk: "low", local: true, mutating: false,
+    inputSchema: { type: "object", properties: {
+      case: { type: "string" }, query: { type: "string" }, type: { type: "string" },
+      status: { type: "string" }, limit: { type: "number" } }, required: ["case"] }
+  },
   "case.work": {
     description: "读取 case 的 WorkItem/DAG 状态",
     risk: "low", method: "GET", path: "/api/work", caseQuery: true,
@@ -256,6 +263,18 @@ async function invokeLocal(name, args) {
     try { j = JSON.parse(raw); } catch (e) { try { j = JSON.parse(raw.split(String.fromCharCode(10)).pop()); } catch (e2) {} }
     return { status: r.status === 0 ? 200 : 500,
       body: j || { ok: false, error: String(r.stderr || "").slice(0, 500) || ("exit " + r.status) } };
+  }
+  if (name === "knowledge.search") {
+    const a = args || {};
+    const qs = new URLSearchParams({ case: String(a.case || "default") });
+    if (a.query) qs.set("q", String(a.query));
+    if (a.type) qs.set("type", String(a.type));
+    if (a.status) qs.set("status", String(a.status));
+    if (a.limit) qs.set("limit", String(a.limit));
+    try {
+      const r = await api("GET", "/api/knowledge/search?" + qs.toString());
+      return { status: r.status, body: r.body };
+    } catch (e) { return { status: 500, body: { ok: false, error: String(e && e.message || e) } }; }
   }
   if (name === "memory.search") {
     const r = spawnSync(process.execPath, [path.join(ROOT, "scripts/memory.js"), "search",

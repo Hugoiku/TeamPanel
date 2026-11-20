@@ -6292,6 +6292,21 @@ function ensureFinalReview(caseId, service, rel, version, requester) {
         counts: { total: d.total, verified: d.verified, unverified: d.unverified, conflict: d.conflict, stale: d.stale, superseded: d.superseded },
         items: d.items.slice(-200) });
     }
+    if (p === "/api/knowledge/search" && req.method === "GET") {
+      const caseId = u.searchParams.get("case") || "default";
+      const q = String(u.searchParams.get("q") || "").toLowerCase().trim();
+      const type = String(u.searchParams.get("type") || "").trim();
+      const status = String(u.searchParams.get("status") || "").trim();
+      const limit = Math.max(1, Math.min(20, parseInt(u.searchParams.get("limit") || "8", 10) || 8));
+      const all = caseView.knowledgeView(caseId, ROOT).entries || [];
+      const items = all.filter(x => {
+        if (type && x.type !== type) return false;
+        if (status && x.status !== status) return false;
+        if (!q) return true;
+        return String(x.id + " " + x.title + " " + x.value + " " + x.source).toLowerCase().includes(q);
+      }).slice(0, limit);
+      return json(res, 200, { ok: true, case: caseId, total: all.length, count: items.length, items });
+    }
     if (p === "/api/knowledge/view" && req.method === "GET") {
       const caseId = u.searchParams.get("case") || "default";
       return json(res, 200, caseView.knowledgeView(caseId, ROOT));
