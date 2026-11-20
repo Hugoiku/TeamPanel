@@ -950,6 +950,7 @@ button.primary{background:#2563eb;border-color:#2563eb;color:#fff}
         <details class="lockbox opsub" id="aliasBox"><summary>指标别名审核 <span id="aliasCount" class="sub"></span></summary><div class="locks" id="aliasList"></div></details>
         <details class="lockbox opsub" id="draftMetricBox"><summary>指标草稿 <span id="draftMetricCount" class="sub"></span></summary><div class="locks" id="draftMetricList"></div></details>
         <details class="lockbox opsub" id="sourceHealthBox"><summary>数据源 <span id="sourceHealthBadge" class="sub"></span></summary><div class="locks" id="sourceHealthList"></div></details>
+        <details class="lockbox opsub" id="qualityBox"><summary>报告质量 <span id="qualityCount" class="sub"></span></summary><div class="locks" id="qualityList"></div></details>
         <details class="lockbox opsub" id="evidenceBox"><summary>证据索引 <span id="evidenceCount" class="sub"></span></summary><div class="locks" id="evidenceList"></div></details>
       </div></details>
       <details class="lockbox groupbox" id="execGroupBox"><summary>执行与运维 <span class="sub">循环 / 交付 / 任务</span></summary><div class="locks">
@@ -5664,6 +5665,25 @@ button.primary{background:#2563eb;border-color:#2563eb;color:#fff}
       })(rows[i]);
     }).catch(function () {});
   }
+  function renderQuality() {
+    var el = $("qualityList"), cnt = $("qualityCount"); if (!el) return;
+    fetch(API + "/api/case/view?case=" + encodeURIComponent(CASE_ID)).then(function (r) { return r.json(); }).then(function (v) {
+      var q = (v && v.quality) || {};
+      var e = q.evidence || {}, c = q.claims || {}, b = q.briefs || {}, rp = q.report || {};
+      var issues = (v && v.inbox || []).filter(function (x) { return x.severity !== "info"; });
+      if (cnt) cnt.textContent = issues.length ? String(issues.length) : "";
+      var row = function (label, val, color) { return '<div style="display:flex;gap:6px;font-size:9.5px;padding:2px 0;border-bottom:1px dashed #eef2f7"><span style="color:#64748b;min-width:64px">' + label + '</span><b style="color:' + (color || "#334155") + '">' + esc(val) + '</b></div>'; };
+      var h = '';
+      h += row("证据", (e.verified || 0) + "/" + (e.total || 0) + " 已验证", e.conflict ? "#dc2626" : "#059669");
+      if (e.conflict) h += row("证据冲突", e.conflict + " 条", "#dc2626");
+      if (e.stale) h += row("过期证据", e.stale + " 条", "#b45309");
+      h += row("论点映射", (c.mapped || 0) + "/" + (c.total || 0), (c.unmapped ? "#b45309" : "#059669"));
+      h += row("共享 Brief", (b.complete || 0) + "/" + (b.total || 0), (b.complete === b.total ? "#059669" : "#b45309"));
+      h += row("报告", rp.exists ? (rp.signed ? "已签发" : "待复核/签发") : "未生成", rp.exists ? "#334155" : "#b45309");
+      if (issues.length) h += '<div style="font-size:9px;color:#b45309;margin-top:4px">' + issues.slice(0, 4).map(function (x) { return esc(x.title || ""); }).join("<br>") + '</div>';
+      setHTML(el, h);
+    }).catch(function () {});
+  }
   var liveCaseView = null;
   function renderCaseView() {
     var el = $("caseViewBanner"); if (!el) return;
@@ -6364,7 +6384,7 @@ button.primary{background:#2563eb;border-color:#2563eb;color:#fff}
       setHTML(el,h); applyMidTab();
     }).catch(function(){});
   }
-  function render() { renderHeader(); renderSetupBanner(); renderAlerts(); renderStaff(); renderInbox(); renderLeft(); renderPending(); renderPendingDetail(); renderDeliverables(); renderUploads(); renderPlans(); renderMid(); renderGraph(); renderModelStrip(); renderLocks(); renderCaseView(); renderNextStep(); renderInvestorDash(); renderDataReview(); renderAliasReview(); renderMetricDrafts(); renderEvidence(); renderConflicts(); renderFinalPipeline(); renderAsyncJobs(); renderRightDeliverables(); renderDataJobs(); renderDataTasks(); renderModelBar(); renderTaskSummary(); renderCompletion(); renderIntakeDecision(); renderIssueNav(); setTimeout(renderIssueNav, 400); setTimeout(renderIssueNav, 1200); setTimeout(renderModelLinks, 80);
+  function render() { renderHeader(); renderSetupBanner(); renderAlerts(); renderStaff(); renderInbox(); renderLeft(); renderPending(); renderPendingDetail(); renderDeliverables(); renderUploads(); renderPlans(); renderMid(); renderGraph(); renderModelStrip(); renderLocks(); renderCaseView(); renderQuality(); renderNextStep(); renderInvestorDash(); renderDataReview(); renderAliasReview(); renderMetricDrafts(); renderEvidence(); renderConflicts(); renderFinalPipeline(); renderAsyncJobs(); renderRightDeliverables(); renderDataJobs(); renderDataTasks(); renderModelBar(); renderTaskSummary(); renderCompletion(); renderIntakeDecision(); renderIssueNav(); setTimeout(renderIssueNav, 400); setTimeout(renderIssueNav, 1200); setTimeout(renderModelLinks, 80);
     var sm = $("setMask"); if (sm && sm.style.display !== "none") renderSettings();
     var cm = $("caseMask"); if (cm && cm.style.display !== "none") renderCaseModal();
     var tm = $("taskMask"); if (tm && tm.style.display !== "none") renderTaskModal();
