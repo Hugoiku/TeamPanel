@@ -4464,7 +4464,7 @@ button.primary{background:#2563eb;border-color:#2563eb;color:#fff}
     var h = "";
     // 一轮跑完就停在“等你查看/签发”，不自动进入下一轮
     var cy = (S.cycle || {});
-    if (cy.status === "awaiting_review" || cy.status === "signed") {
+    if (cy.status === "awaiting_review") {
       var sm = cy.summary || {};
       h += '<div class="approve" style="border-color:#2f6b4a"><div class="ahrow">' +
         '<span class="abadge" style="background:#123424;color:#58d68d">本轮已完成</span>' +
@@ -4486,7 +4486,7 @@ button.primary{background:#2563eb;border-color:#2563eb;color:#fff}
     if (cy.status === "signed") {
       h += '<div class="approve" style="border-color:#2f6b4a"><div class="ahrow">' +
         '<span class="abadge" style="background:#123424;color:#58d68d">已签发</span>' +
-        '<span class="atxt">final_report.md 已签发为对外版本，可下载归档</span></div>' +
+        '<span class="atxt">最终报告已签发为对外版本，可下载归档</span></div>' +
         '<div class="aacts"><button class="primary" data-cycle="preview">查看终稿</button></div></div>';
     }
     var pend = (liveCaps || []).filter(function (c) { return c.status === "pending"; });
@@ -8975,7 +8975,11 @@ button.primary{background:#2563eb;border-color:#2563eb;color:#fff}
     var cyBtn = t.closest("[data-cycle]");
     if (cyBtn) {
       var act = cyBtn.getAttribute("data-cycle");
-      if (act === "preview") { openFile("final_report.md"); return; }
+      if (act === "preview") {
+        var relFinal = (S.files && S.files["reports/final-report.docx"]) ? "reports/final-report.docx" :
+          ((S.files && S.files["final_report.md"]) ? "final_report.md" : "reports/final-report.docx");
+        openFile(relFinal); return;
+      }
       if (act === "retry-stage") {
         fetch(API + "/api/cycle/retry", { method: "POST", headers: { "content-type": "application/json" },
           body: JSON.stringify({ case: CASE_ID, agent: (S.cycle && S.cycle.agent) || null, by: "you" }) })

@@ -5970,8 +5970,13 @@ function ensureFinalReview(caseId, service, rel, version, requester) {
         } catch (e) {}
       }
       // 5) Word
+      let docTitle = caseId + " 研究报告";
+      try {
+        const sp = JSON.parse(fs.readFileSync(vaultPath(caseId, "research/sector-pack.json"), "utf8"));
+        if (sp && sp.label) docTitle = sp.label + "行业研究报告";
+      } catch (e) {}
       const dx = await runPython([path.join(ROOT, "scripts/md_to_docx.py"), "--md", cleanMd,
-        "--out", "reports/final-report.docx", "--case", caseId, "--title", "AI短剧行业研究报告", "--investor", "--no-disclaimer", "--evidence-appendix"], env, 120000);
+        "--out", "reports/final-report.docx", "--case", caseId, "--title", docTitle, "--investor", "--no-disclaimer", "--evidence-appendix"], env, 120000);
       let dj = null; try { dj = JSON.parse(String(dx.stdout || "").trim().split("\n").pop()); } catch (e) {}
       if (!dj || !dj.ok) return json(res, 500, { error: "Word 生成失败：" + String((dj && dj.error) || dx.stderr || "").slice(0, 300) });
       // 报告版本以 manifest 为唯一来源；重启/重生成不回退。
