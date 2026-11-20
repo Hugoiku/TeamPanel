@@ -30,8 +30,22 @@ assert.strictEqual(pending.phase, "REVIEW_PENDING");
 const ready = view({ plans: [{ id: "P1", status: "approved" }], works: [{ id: "W1", state: "done" }], finalExists: true,
   reviews: [{ service: "audit", status: "clean", path: "reports/final-report.docx" }, { service: "legal", status: "clean", path: "reports/final-report.docx" }] });
 assert.strictEqual(ready.phase, "READY_TO_SIGN");
+assert.strictEqual(ready.primaryAction.id, "sign_report");
 assert.strictEqual(ready.quality.claims.total, 2);
 assert.strictEqual(ready.quality.claims.mapped, 1);
 assert.ok(ready.inbox.some(x => x.type === "brief"));
+
+const missingReview = view({ plans: [{ id: "P1", status: "approved" }], works: [{ id: "W1", state: "done" }], finalExists: true,
+  reviews: [{ service: "audit", status: "clean", path: "reports/final-report.docx" }] });
+assert.strictEqual(missingReview.phase, "REVIEW_PENDING");
+assert.strictEqual(missingReview.primaryAction.id, "request_review");
+assert.deepStrictEqual(missingReview.primaryAction.services, ["legal"]);
+
+const signed = view({ plans: [{ id: "P1", status: "approved" }], works: [{ id: "W1", state: "done" }], finalExists: true,
+  reviews: [{ service: "audit", status: "clean", path: "reports/final-report.docx" },
+    { service: "legal", status: "clean", path: "reports/final-report.docx" }],
+  signatures: { "reports/final-report.docx": { by: "you", at: "2026-01-01", version: 1 } } });
+assert.strictEqual(signed.phase, "SIGNED");
+assert.strictEqual(signed.primaryAction.id, "verify_report");
 fs.rmSync(root, { recursive: true, force: true });
 console.log("ALL PASS test-case-view");
