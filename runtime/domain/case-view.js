@@ -122,6 +122,13 @@ const PHASE_LABEL = {
   REVIEW_PENDING: "待复核", REVIEW_FAILED: "复核未通过",
   READY_TO_SIGN: "待签发", SIGNED: "已签发", VERIFIED: "已完成"
 };
+// 用户只看到 7 个阶段；内部 phase 仍保留细粒度，避免 UI 状态爆炸。
+const USER_STAGE = {
+  PREPARE: "准备", PLAN_PENDING: "待批准", READY_TO_RUN: "执行中",
+  RUNNING: "执行中", DATA_GAP: "待补数据", DRAFT_READY: "执行中",
+  REVIEW_PENDING: "待复核", REVIEW_FAILED: "待复核",
+  READY_TO_SIGN: "待签发", SIGNED: "完成", VERIFIED: "完成"
+};
 
 function nextAction(phase, input) {
   const { plans, works, needs, report } = input;
@@ -191,6 +198,7 @@ function buildCaseView(opts) {
     report: { exists: report.exists, audit: report.audit, legal: report.legal, signed: report.signed }
   };
   return { case: caseId, revision: opts.revision || 0, phase, phaseLabel: PHASE_LABEL[phase] || phase,
+    stage: USER_STAGE[phase] || phase, stageLabel: USER_STAGE[phase] || phase,
     primaryAction: action, blocking: inbox.filter(x => x.severity === "high"), inbox, quality,
     updatedAt: new Date().toISOString() };
 }

@@ -5676,7 +5676,7 @@ button.primary{background:#2563eb;border-color:#2563eb;color:#fff}
         var act = v.primaryAction || {};
         var q = v.quality || {};
         var h = '<div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">' +
-          '<b>现在：' + esc(v.phaseLabel || v.phase || "") + '</b>' +
+          '<b>现在：' + esc(v.stageLabel || v.phaseLabel || v.phase || "") + '</b>' +
           '<span style="color:#64748b;font-size:10px">' + esc((v.blocking || []).length ? ("阻塞 " + v.blocking.length + " 项") : "无高优先级阻塞") + '</span>' +
           '<span style="flex:1"></span>' +
           (act.id && act.id !== "wait" ? '<button class="primary" data-case-action="' + esc(act.id) + '"' + (act.enabled === false ? ' disabled style="opacity:.6"' : '') + '>' + esc(act.label || act.id) + '</button>' : '<span style="font-size:10px;color:#64748b">' + esc(act.label || "等待系统") + '</span>') +
