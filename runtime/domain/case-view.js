@@ -108,6 +108,7 @@ function derivePhase(input) {
   if (humanNeeds.length) return "DATA_GAP";
   if (failed) return "RUNNING";
   if (allWorkDone && !report.exists) return "DRAFT_READY";
+  if (report.exists && report.signed) return "SIGNED";
   if (report.exists && reviewPending) return "REVIEW_PENDING";
   if (report.exists && reviewFailed) return "REVIEW_FAILED";
   if (report.exists && (report.audit === "clean" || report.audit === "waived") &&
@@ -138,10 +139,14 @@ function nextAction(phase, input) {
   if (phase === "READY_TO_RUN") return { id: "start_execution", label: "启动执行", owner: "system", enabled: true };
   if (phase === "DATA_GAP") return { id: "fill_data", label: "去补数据", owner: "human", enabled: true };
   if (phase === "DRAFT_READY") return { id: "generate_report", label: "生成最终报告", owner: "system", enabled: true };
-  if (phase === "REVIEW_PENDING") return { id: "wait_review", label: "等待审计/法务复核", owner: "system", enabled: false };
+  if (phase === "REVIEW_PENDING") {
+    const missing = [report.audit === "missing" ? "audit" : "", report.legal === "missing" ? "legal" : ""].filter(Boolean);
+    if (missing.length) return { id: "request_review", label: "发起" + (missing.includes("audit") ? "审计" : "") + (missing.includes("legal") ? "法务" : "") + "复核", owner: "human", enabled: true, services: missing };
+    return { id: "wait_review", label: "等待审计/法务复核", owner: "system", enabled: false };
+  }
   if (phase === "REVIEW_FAILED") return { id: "fix_review", label: "处理复核意见", owner: "human", enabled: true };
   if (phase === "READY_TO_SIGN") return { id: "sign_report", label: "去签发", owner: "human", enabled: true };
-  if (report.signed) return { id: "verify_report", label: "校验报告", owner: "human", enabled: true };
+  if (phase === "SIGNED") return { id: "verify_report", label: "校验报告", owner: "human", enabled: true };
   if (allWorkDone) return { id: "generate_report", label: "生成最终报告", owner: "system", enabled: true };
   if (works.some(w => w.state === "failed" || w.state === "cancelled")) return { id: "continue_execution", label: "继续执行", owner: "system", enabled: true };
   return { id: "wait", label: "等待执行", owner: "system", enabled: false };
@@ -165,6 +170,10 @@ function buildInbox(phase, input) {
   });
   if (phase === "DRAFT_READY") inbox.push({ id: "report:missing", type: "report", severity: "info",
     title: "初稿已完成，待生成最终报告", action: "generate_report" });
+  if (report.exists && report.audit === "missing") inbox.push({ id: "review:audit:missing", type: "review", severity: "warn",
+    title: "尚未发起审计复核", action: "request_review", ref: "audit" });
+  if (report.exists && report.legal === "missing") inbox.push({ id: "review:legal:missing", type: "review", severity: "warn",
+    title: "尚未发起法务复核", action: "request_review", ref: "legal" });
   if (report.exists && (report.audit === "returned" || report.audit === "conditional")) inbox.push({ id: "review:audit", type: "review", severity: "high",
     title: "审计复核未通过", action: "fix_review", ref: "audit" });
   if (report.exists && (report.legal === "returned" || report.legal === "conditional")) inbox.push({ id: "review:legal", type: "review", severity: "high",

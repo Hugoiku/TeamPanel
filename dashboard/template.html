@@ -8141,6 +8141,14 @@ button.primary{background:#2563eb;border-color:#2563eb;color:#fff}
           .catch(function (e) { toast("生成失败：" + (e && e.message || e)); });
         return;
       }
+      if (ca === "request_review") {
+        var svcs = ((liveCaseView || {}).primaryAction || {}).services || ["audit", "legal"];
+        Promise.all(svcs.map(function (svc) {
+          return fetch(API + "/api/review/request", { method: "POST", headers: { "content-type": "application/json" },
+            body: JSON.stringify({ case: CASE_ID, service: svc, path: "reports/final-report.docx", requester: "you" }) });
+        })).then(function () { toast("复核已发起"); livePoll(); }).catch(function (e) { toast("发起复核失败：" + (e && e.message || e)); });
+        return;
+      }
       if (ca === "wait_review" || ca === "fix_review" || ca === "verify_report") {
         var cb = $("finalPipelineBox");
         if (cb) { cb.open = true; var p1 = cb.parentElement; while (p1) { if (p1.tagName === "DETAILS") p1.open = true; p1 = p1.parentElement; } try { cb.scrollIntoView({ behavior: "smooth", block: "center" }); } catch (e) {} }
