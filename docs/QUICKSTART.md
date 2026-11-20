@@ -30,6 +30,18 @@ node scripts/init-worktree.js --demo   # 首次运行：建目录 + 可选 demo 
 # 面板 http://127.0.0.1:7801/live
 ```
 
+`start.sh` 会自动加载根目录的 `.env`（已 gitignore），也可以直接 `export`。  
+如果你已有 opencode-go 权限，最小配置就是：
+
+```bash
+cp .env.example .env
+# 编辑 .env，填 OPENCODE_GO_API_KEY=...
+./start.sh
+```
+
+默认模型已在 `config/desk.json` 里指向 `opencode-go/deepseek-v4.1-flash`；  
+只要 dsh 和 key 可用，员工就能启动。
+
 ## 3.5 可配置项（config/desk.json）
 
 开源版不把产品默认值写死在代码里，以下都在 `config/desk.json`：

@@ -3,6 +3,9 @@
 set -euo pipefail
 cd "$(dirname "$0")"
 
+# 本地 .env（gitignored）：模型 Key / DSH_BIN / PANEL_TOKEN
+if [ -f .env ]; then set -a; . ./.env; set +a; fi
+
 # hithink-finance skill: secrets and local CLI
 if [ -f runtime/secrets/hithink-finance.env ]; then set -a; . runtime/secrets/hithink-finance.env; set +a; fi
 if [ -d runtime/hithink-cli/node_modules/.bin ]; then export PATH="$PWD/runtime/hithink-cli/node_modules/.bin:$PATH"; fi
