@@ -7337,6 +7337,7 @@ button.primary{background:#2563eb;border-color:#2563eb;color:#fff}
             (l.workId ? ' · ' + esc(l.workId) : '') +
             (l.failureKind ? ' · ' + esc(l.failureKind) : '') +
             (l.recovery ? ' · 恢复：' + esc(l.recovery) : '') +
+            (l.appliedActions && l.appliedActions.length ? ' · 动作 ' + l.appliedActions.length : '') +
             (l.gate ? (l.gate.ok ? ' · 门禁通过' : ' · 门禁失败') : '') +
             (l.usage ? ' · token ' + (l.usage.tokens || 0) + (l.budget && l.budget.maxTokens ? '/' + l.budget.maxTokens : '') : '') +
             (l.usage && l.usage.subagents ? ' · 子代理 ' + l.usage.subagents : '') + '</span>' +

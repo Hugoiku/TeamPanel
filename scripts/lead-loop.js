@@ -136,6 +136,8 @@ async function activeWork(caseId) {
   const state = { id, pid: process.pid, case: caseId, kind: "lead", agent: "lead", objective, mode, runtime: runtimeName, replayOf, resumeOf, autonomy,
     status: "running", rounds: oldState ? (Number(oldState.rounds) || 0) : 0, maxRounds: roundsLimit,
     trace: oldState && Array.isArray(oldState.trace) ? oldState.trace : [], decision: null,
+    decisionId: "", actionId: "",
+    appliedActions: oldState && Array.isArray(oldState.appliedActions) ? oldState.appliedActions : [],
     actions: oldState && Array.isArray(oldState.actions) ? oldState.actions : [],
     budget: { maxRounds: roundsLimit, maxTokens, maxWallMs },
     usage: oldState && oldState.usage ? Object.assign({ tokens: 0, toolCalls: 0, wallMs: 0 }, oldState.usage) : { tokens: 0, toolCalls: 0, wallMs: 0 },
@@ -156,11 +158,19 @@ async function activeWork(caseId) {
   }
   async function note(action, ok, detail, extra) {
     const rec = Object.assign({ round: state.rounds, action, ok: !!ok, detail: String(detail || "").slice(0, 600),
+      decisionId: state.decisionId || "", actionId: state.actionId || "",
       at: new Date().toISOString() }, extra || {});
     state.actions = (state.actions || []).slice(-50).concat([rec]);
+    if (ok && state.actionId && !(state.appliedActions || []).some(x => x.actionId === state.actionId)) {
+      state.appliedActions = (state.appliedActions || []).slice(-200).concat([{
+        actionId: state.actionId, decisionId: state.decisionId, action, at: rec.at,
+        detail: rec.detail
+      }]);
+    }
     lib.appendTrace(state, "action." + action, (ok ? "ok " : "fail ") + rec.detail);
     await lib.emit("agent.loop.action", "lead", { case: caseId, loopId: id, round: state.rounds,
-      action, ok: !!ok, detail: rec.detail, extra: extra || {} });
+      action, ok: !!ok, detail: rec.detail, decisionId: state.decisionId || "", actionId: state.actionId || "",
+      extra: extra || {} });
   }
   async function createNeed(kind, title, detail, blocking) {
     return tools.invoke("need.request", { case: caseId, agent: "lead", kind: kind || "info",
@@ -217,6 +227,14 @@ async function activeWork(caseId) {
       await lib.emit("agent.loop.budget", "lead", { case: caseId, loopId: id, round, usage: state.usage, budget: state.budget });
       if (state.usage.tokens > maxTokens) { state.status = "budget_exceeded"; lib.appendTrace(state, "budget", "token 超预算"); break; }
       const action = String(decision.action || "finish");
+      state.decisionId = id + "-d" + round;
+      state.actionId = state.decisionId + "-" + action;
+      if ((state.appliedActions || []).some(x => x.actionId === state.actionId)) {
+        lib.appendTrace(state, "action.duplicate", "跳过已执行 action " + state.actionId);
+        state.status = "done";
+        terminal = true;
+        break;
+      }
       const reason = String(decision.reason || "").slice(0, 500);
       const allowed = ALLOWED_ACTIONS[autonomy] || ALLOWED_ACTIONS.supervised;
       if (allowed.indexOf(action) < 0) {
