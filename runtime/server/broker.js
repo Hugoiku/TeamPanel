@@ -8629,6 +8629,41 @@ setInterval(() => {
     });
   }));
 }, 30000).unref();
+function postOwn(pathname, body) {
+  return new Promise(resolve => {
+    const payload = JSON.stringify(body || {});
+    const req = http.request({ hostname: "127.0.0.1", port: PORT, path: pathname, method: "POST",
+      headers: { "content-type": "application/json", "content-length": Buffer.byteLength(payload) } }, res => {
+      let data = ""; res.on("data", d => data += d); res.on("end", () => resolve({ status: res.statusCode, body: data }));
+    });
+    req.on("error", e => resolve({ status: 0, body: String(e && e.message || e) }));
+    req.write(payload); req.end();
+  });
+}
+function autoResumeWaitingLeads() {
+  const dir = path.join(ROOT, "runtime/agent-loops");
+  let files = [];
+  try { files = fs.readdirSync(dir).filter(f => f.endsWith(".json")); } catch (e) { return; }
+  for (const f of files) {
+    let j = null;
+    try { j = JSON.parse(fs.readFileSync(path.join(dir, f), "utf8")); } catch (e) { continue; }
+    if (!j || j.kind !== "lead" || j.status !== "waiting_human" || j.autoResumeRequestedAt) continue;
+    const caseId = j.case || "default";
+    const cur = leadLeases.get(caseId);
+    if (cur && Number(cur.until) > Date.now() && cur.pid && pidAlive(cur.pid)) continue;
+    const answered = (needs.get(caseId) || []).filter(n =>
+      (n.status === "answered" || n.status === "waived") && !n.consumedAt && n.blocking !== false &&
+      Date.parse(n.answeredAt || 0) >= Date.parse(j.updatedAt || j.createdAt || 0));
+    if (!answered.length) continue;
+    j.autoResumeRequestedAt = new Date().toISOString();
+    j.status = "resuming";
+    try { fs.writeFileSync(path.join(dir, f), JSON.stringify(j, null, 2)); } catch (e) {}
+    emit("agent.loop.auto_resume", "system", { case: caseId, loopId: j.id, needId: answered[0].id,
+      reason: "blocking need answered; resume Lead" });
+    postOwn("/api/agent/loop/resume", { case: caseId, id: j.id, by: "system:need-answer" });
+  }
+}
+setInterval(autoResumeWaitingLeads, 15000).unref();
 emit("broker.started", "system", { pid: process.pid, port: PORT });
 
 function runPython(args, env, timeoutMs) {
