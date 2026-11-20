@@ -32,6 +32,22 @@ Case → Plan → WorkItem → Employee Loop → Gate → Evidence → Report �
 单 Agent 对话强在低门槛；  
 天枢在两者之上增加投研工作流治理：任务契约、数据证据、失败恢复、报告签发与复现。
 
+## 当前 Panel 能力
+
+| 能力 | 说明 |
+|---|---|
+| CaseView | 把 case 状态投影成“当前阶段 + 主按钮 + 阻塞项 + 质量摘要” |
+| 七阶段 | 准备 → 待批准 → 执行中 → 待补数据 → 待复核 → 待签发 → 完成 |
+| 对象状态 | Evidence / Claim / Brief / Report 是否可信、是否过期、是否冲突 |
+| 证据来源 | URL / 文件 / connector / derived，不再把所有来源都当成 URL |
+| 文件证据 | 显示文件名；读取时计算并展示 sha256，避免只显示空白 URL |
+| 知识视图 | 只读知识检索，员工可查已有证据/claim，但不能自行提升或改权限 |
+| Lead 恢复 | 单 Lead 租约、心跳、resume、takeover、failureKind |
+| 报告交付 | 复核、签发、verify，报告 artifact 路径集中管理 |
+| 缺口闭环 | 待补 / 部分补齐 / 已豁免，并显示对报告的影响 |
+
+> 当前知识层是只读视图，不是完整候选/验证知识池；完整知识治理仍属后续阶段。
+
 ## 使用前提
 
 ### 1. 只看 Panel（最小前提）
@@ -156,12 +172,44 @@ evidence/sources.jsonl 证据 S# / snapshot / sha256
 runtime/ledger/        append-only 事件账本
 ~~~
 
+## 证据与来源
+
+证据不要求一定有 URL。来源可以是：
+
+~~~text
+url        网页 / 官方 API
+file       用户上传文件
+connector  Tushare / 中债 / 统计局等
+derived    由其他证据计算得出
+~~~
+
+文件证据没有 URL 是正常的，但应显示：
+
+~~~text
+文件名
+sourceType
+sha256
+入库时间
+~~~
+
+当前面板会在读取文件证据时计算 sha256 并标注“现算”；  
+长期应在上传入库时持久化 hash，并让报告 verify 逐文件校验。
+
 ## 安全
 
 - 真实 key 只放在 .env 或 runtime/secrets/；
 - vault/、drafts/、runtime/ 默认不提交；
 - config/desk.local.json 已被 gitignore；
 - 详细规则见 [SECURITY.md](SECURITY.md)。
+
+## 已知边界
+
+- 单机、单用户；没有多租户 / RBAC / 高可用；
+- 知识层当前只读，不做完整 candidate/verified 知识池；
+- 不做事件驱动控制面；
+- 不做 section 级缓存失效；
+- 文件证据的 hash 目前在读取时计算，尚未全部持久化；
+- 已签发报告若在标题/内容修复前生成，需要重新生成、复核、签发才会更新。
 
 ## 当前状态
 
