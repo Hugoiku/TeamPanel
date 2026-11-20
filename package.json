@@ -31,6 +31,7 @@
     "test:figures": "node scripts/test-figure-catalog.js",
     "test:case-view": "node scripts/test-case-view.js",
     "test:lead-recovery": "node scripts/test-lead-recovery.js",
+    "test:report-verify": "node scripts/test-report-verify.js",
     "test:data-request": "node scripts/test-data-request.js",
     "test:datatask": "node scripts/test-datatask.js",
     "test:datatask-flow": "node scripts/test-datatask-flow.js",

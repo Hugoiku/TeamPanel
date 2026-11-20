@@ -47,5 +47,17 @@ const signed = view({ plans: [{ id: "P1", status: "approved" }], works: [{ id: "
   signatures: { "reports/final-report.docx": { by: "you", at: "2026-01-01", version: 1 } } });
 assert.strictEqual(signed.phase, "SIGNED");
 assert.strictEqual(signed.primaryAction.id, "verify_report");
+
+// 签名文件落盘后，CaseView 不依赖内存 map 也能识别 signed。
+fs.mkdirSync(path.join(base, "reports"), { recursive: true });
+fs.writeFileSync(path.join(base, "reports", "final-report.docx"), "PK");
+fs.writeFileSync(path.join(base, "reports", "final-signature.json"), JSON.stringify({
+  path: "reports/final-report.docx", by: "test", at: "2026-01-01", version: 1, manifestVersion: 1, sha: "x"
+}));
+const signedFromFile = view({ plans: [{ id: "P1", status: "approved" }], works: [{ id: "W1", state: "done" }], finalExists: true,
+  reviews: [{ service: "audit", status: "clean", path: "reports/final-report.docx" },
+    { service: "legal", status: "clean", path: "reports/final-report.docx" }] });
+assert.strictEqual(signedFromFile.phase, "SIGNED");
+assert.strictEqual(signedFromFile.primaryAction.id, "verify_report");
 fs.rmSync(root, { recursive: true, force: true });
 console.log("ALL PASS test-case-view");

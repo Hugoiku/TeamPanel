@@ -80,7 +80,11 @@ function reportSummary(caseDir, reviews, signatures, finalExists) {
   const list = Array.isArray(reviews) ? reviews : [];
   const latest = service => list.filter(r => r.service === service && r.path === "reports/final-report.docx")
     .sort((a, b) => String(b.createdAt || "").localeCompare(String(a.createdAt || "")))[0] || null;
-  const sig = (signatures || {})["reports/final-report.docx"] || null;
+  let sig = (signatures || {})["reports/final-report.docx"] || null;
+  if (!sig) {
+    const sf = readJson(path.join(caseDir, "reports", "final-signature.json"));
+    if (sf && (!sf.path || sf.path === "reports/final-report.docx")) sig = sf;
+  }
   const audit = latest("audit"), legal = latest("legal");
   return { exists: !!finalExists, manifest: manifest.version || 0,
     audit: audit ? audit.status : "missing", legal: legal ? legal.status : "missing",
