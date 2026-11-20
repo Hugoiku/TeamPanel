@@ -256,6 +256,8 @@ button.primary{background:linear-gradient(135deg,#2456c8,#4940c6);border-color:#
   .filestage img{max-width:100%;border-radius:8px}
 .modal{width:470px;max-width:94vw;background:#0d1626;border:1px solid var(--line2);border-radius:10px;
   box-shadow:0 24px 70px rgba(0,0,0,.65)}
+#reportsMask .modal{width:680px;max-height:86vh;display:flex;flex-direction:column}
+#reportsBody{max-height:calc(86vh - 44px);overflow:auto;min-height:0}
 .mhead{display:flex;align-items:center;padding:10px 14px;border-bottom:1px solid var(--line);font-weight:650;font-size:12px}
 .mhead .x{margin-left:auto;cursor:pointer;color:var(--dim)}
 .mbody{padding:12px 14px}
@@ -2326,7 +2328,9 @@ button.primary{background:#2563eb;border-color:#2563eb;color:#fff}
       if (tries > 0) setTimeout(function () { pollFigurePlan(tries - 1); }, 2000);
     }).catch(function () {});
   }
+  var reportsOpenSeq = 0;
   function openReports() {
+    var openSeq = ++reportsOpenSeq;
     fetch(API + "/api/reports?case=" + encodeURIComponent(CASE_ID))
       .then(function (r) { return r.json(); })
       .then(function (j) {
@@ -2354,7 +2358,11 @@ button.primary{background:#2563eb;border-color:#2563eb;color:#fff}
         });
         setHTML($("reportsBody"), h);
         fetch(API + "/api/final/preflight?case=" + encodeURIComponent(CASE_ID)).then(function (r) { return r.json(); }).then(function (p) {
+          if (openSeq !== reportsOpenSeq) return;
+          var body0 = $("reportsBody"); if (!body0) return;
+          var old0 = body0.querySelector(".signpreflight"); if (old0) old0.remove();
           var box = document.createElement("div");
+          box.className = "signpreflight";
           box.style.cssText = "border:1px solid #e2e8f0;border-radius:9px;padding:8px 10px;margin:0 0 8px;background:#fbfcfe";
           var ch = '<div style="font-size:10px;font-weight:650;color:#334155;margin-bottom:4px">签发前检查 ' + (p.ok ? '✓ 全部通过' : '· 待处理') + '</div>';
           (p.checks || []).forEach(function (c0) {
@@ -2364,9 +2372,13 @@ button.primary{background:#2563eb;border-color:#2563eb;color:#fff}
           var body = $("reportsBody"); if (body) body.insertBefore(box, body.firstChild);
         }).catch(function () {});
         fetch(API + "/api/report/freshness?case=" + encodeURIComponent(CASE_ID)).then(function (r) { return r.json(); }).then(function (f) {
+          if (openSeq !== reportsOpenSeq) return;
           var items = (f && f.items) || [];
           if (!items.length) return;
+          var body1 = $("reportsBody"); if (!body1) return;
+          var old1 = body1.querySelector(".signfreshness"); if (old1) old1.remove();
           var box = document.createElement("div");
+          box.className = "signfreshness";
           box.style.cssText = "border:1px solid #e2e8f0;border-radius:9px;padding:8px 10px;margin:0 0 8px;background:#fff";
           var stale = (f.stale || []).length;
           var h = '<div style="font-size:10px;font-weight:650;color:' + (stale ? "#b45309" : "#334155") + ';margin-bottom:4px">数据截至' + (stale ? ' · 有过期项，签发需确认' : '') + '</div>';
@@ -2378,7 +2390,7 @@ button.primary{background:#2563eb;border-color:#2563eb;color:#fff}
           box.innerHTML = h;
           var body = $("reportsBody"); if (body) body.insertBefore(box, body.firstChild);
         }).catch(function () {});
-        $("reportsMask").style.display = "flex";
+        $("reportsMask").style.display = "grid";
       })
       .catch(function (e) { toast("读取报告失败：" + (e && e.message || e)); });
   }
