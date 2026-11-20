@@ -195,6 +195,11 @@ function buildCaseView(opts) {
     evidence: { total: evidence.total, verified: evidence.verified, unverified: evidence.unverified, conflict: evidence.conflict, stale: evidence.stale },
     claims: { total: claims.total, mapped: claims.mapped, unmapped: claims.unmapped },
     briefs: { total: briefs.total, complete: briefs.complete },
+    gaps: {
+      open: (opts.needs || []).filter(n => n.status === "pending").length,
+      partial: (opts.needs || []).filter(n => n.status === "partial").length,
+      waived: (opts.needs || []).filter(n => n.status === "waived").length
+    },
     report: { exists: report.exists, audit: report.audit, legal: report.legal, signed: report.signed }
   };
   return { case: caseId, revision: opts.revision || 0, phase, phaseLabel: PHASE_LABEL[phase] || phase,

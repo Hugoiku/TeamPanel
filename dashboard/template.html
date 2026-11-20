@@ -5681,6 +5681,8 @@ button.primary{background:#2563eb;border-color:#2563eb;color:#fff}
       if (e.stale) h += row("过期证据", e.stale + " 条", "#b45309");
       h += row("论点映射", (c.mapped || 0) + "/" + (c.total || 0), (c.unmapped ? "#b45309" : "#059669"));
       h += row("共享 Brief", (b.complete || 0) + "/" + (b.total || 0), (b.complete === b.total ? "#059669" : "#b45309"));
+      var gp = q.gaps || {};
+      h += row("数据缺口", (gp.open || 0) + " 待补 · " + (gp.partial || 0) + " 部分 · " + (gp.waived || 0) + " 豁免", (gp.open || gp.partial) ? "#b45309" : "#059669");
       h += row("报告", rp.exists ? (rp.signed ? "已签发" : "待复核/签发") : "未生成", rp.exists ? "#334155" : "#b45309");
       if (issues.length) h += '<div style="font-size:9px;color:#b45309;margin-top:4px">' + issues.slice(0, 4).map(function (x) { return esc(x.title || ""); }).join("<br>") + '</div>';
       setHTML(el, h);
