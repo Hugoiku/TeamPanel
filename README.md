@@ -69,30 +69,37 @@ Case → Plan → WorkItem → Employee Loop → Gate → Evidence → Report �
 1. 检查 node >= 18、git、dsh --version、当前目录权限。
 2. clone 仓库；如果已存在，先 git status / git pull，不要覆盖用户改动。
 3. 进入项目，执行 node scripts/init-worktree.js --demo。
-4. 检查根目录 .env：
-   - 不存在则 cp .env.example .env；
-   - 如果用户已提供 OPENCODE_GO_API_KEY，写入 .env，但不要打印值；
-   - 如果没有 key，先不要启动员工，向用户说明需要配置。
-5. 确认 dsh 可用；如果不在 PATH，设置 DSH_BIN 为实际绝对路径。
-6. 启动：./start.sh；如果端口占用，使用 PORT=7802 ./start.sh。
-7. 验证：
+4. 确认“用户当前能用的模型”，不要假设 provider：
+   - 先看 dsh 实际能调用哪个 provider / model；
+   - 如果用户已说明，按其 provider / model / base_url / key 配置；
+   - 如果 DSH 依赖账号登录而不是环境变量，先用 dry-run 验证 Panel 子进程能否复用；
+   - 需要 key 时，让用户把 key 写入 .env 的对应变量，不要打印值。
+5. 在 Panel 模型配置里写入与 DSH 一致的那一条：
+   - provider、model 必须与 dsh 可用模型一致；
+   - 自建/provider 需要 base_url 时填 base_url；
+   - key_ref 用 env:YOUR_KEY_NAME，不写明文；
+   - 如果 config/desk.json 的示例模型不是用户可用模型，改 config/desk.local.json 或面板默认模型，不要改源码默认值。
+6. 确认 dsh 可用；如果不在 PATH，设置 DSH_BIN 为实际绝对路径。
+7. 启动：./start.sh；如果端口占用，使用 PORT=7802 ./start.sh。
+8. 验证：
    curl -s http://127.0.0.1:7801/api/health
    curl -s http://127.0.0.1:7801/api/doctor
    curl -s http://127.0.0.1:7801/api/models
-8. 运行 dry-run：
+9. 运行 dry-run：
    node runtime/agents/employee.js --agent macro --case case-demo --task "部署验收" --dry-run
-9. 如果 key 可用，再跑一个最小真实任务；失败则保留错误原文，不要假装成功。
-10. 最后报告：
+10. 如果模型可用，再跑一个最小真实任务；失败则保留错误原文，不要假装成功。
+11. 最后报告：
    - 本地 URL
    - doctor 哪些项通过/失败
-   - 默认模型
+   - 实际使用的 provider / model
    - 是否达到“可正式使用”
-   - 还缺什么（key / dsh / 数据源 / Python）
+   - 还缺什么（dsh / 模型 / 数据源 / Python）
 
 重要：
-你（部署 Agent）的模型调用权限，不等于 Panel 员工的模型凭据。
-Panel 员工由 dsh 子进程启动，需要 OPENCODE_GO_API_KEY 或
-~/.dsh/.credentials.yaml 里可用的 provider。不要假设你有这个 key。
+部署 Agent 自己的模型调用权限，不等于 Panel 员工的模型凭据。
+Panel 员工由 dsh 子进程启动，必须使用 dsh 真正能调用的 provider/model；
+不要假设一定是 opencode-go，也不要假设任何固定 provider。
+如果唯一可用的 provider 需要额外 key，让用户提供，不能伪造。
 ~~~
 
 ### 正式使用的最低验收
@@ -104,7 +111,7 @@ Node.js >= 18
 dsh 能找到
 /api/health 返回 ok
 /api/doctor 中 node / dsh / config / vault 通过
-/api/models 里有 opencode-go/deepseek-v4.1-flash
+/api/models 里至少有一条与用户 DSH 实际可用模型一致的条目
 dry-run 能启动员工进程
 用户能给一个 case 派活并看到 agent.run.started
 ~~~
@@ -157,15 +164,17 @@ node scripts/init-worktree.js --demo
 
 ~~~text
 DeepSeek Harness（dsh CLI）  必须
-模型凭据                    必须
+至少一个 DSH 可调用的模型     必须
 可访问模型 API 的网络        必须
 ~~~
 
 - dsh 要出现在 PATH，或通过 DSH_BIN 指定路径；
 - 没有 dsh 时面板仍能打开，但员工无法启动，顶部会提示「未找到 dsh」；
-- 模型凭据放在 .env 或 runtime/secrets/，不要提交到仓库。
+- Panel 不限定 provider：opencode-go、DeepSeek、Anthropic、OpenAI 兼容网关等，只要 dsh 真正能调用即可；
+- 模型凭据放在 .env 或 ~/.dsh/.credentials.yaml，不要提交到仓库。
 
-首次启动后：面板左下角「模型配置」→「＋ 新建模型配置」→ 填一个 OpenAI 兼容网关 → 保存并应用。
+首次启动后：面板左下角「模型配置」→ 选择或新建与 dsh 实际可用模型一致的条目 → 保存并应用。  
+如果仓库示例默认值不是你用的 provider，改 config/desk.local.json 或面板默认模型，不要改源码默认值。
 
 ### 3. 数据采集与报告
 

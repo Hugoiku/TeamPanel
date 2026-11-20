@@ -7,7 +7,7 @@
 | 级别 | 需要什么 | 能做到什么 |
 |---|---|---|
 | 只看板 | Node.js 18+ | 打开面板、看历史账本、看泳道图、改模型/技能配置、看交付物 |
-| 看板 + 派活 | Node.js + DeepSeek Harness（dsh）+ `OPENCODE_GO_API_KEY` | 员工真的跑起来，写底稿、写证据池、过门禁 |
+| 看板 + 派活 | Node.js + DeepSeek Harness（dsh）+ 至少一个 dsh 可调用的模型 | 员工真的跑起来，写底稿、写证据池、过门禁 |
 | 跨机器访问 | 上面两项 + `HOST=0.0.0.0` + `PANEL_TOKEN` | 别人的浏览器/手机也能看同一份账本 |
 
 **没有 dsh 也能看板**，但派活会直接失败：面板右上会显示「未找到 dsh · 员工无法启动」。
@@ -18,7 +18,7 @@
 |---|---|---|
 | Node.js ≥ 18 | 必需 | Broker 零依赖，只用内置模块 |
 | DeepSeek Harness（dsh CLI） | 员工必需 | 员工的运行本体；`DSH_BIN` 可指定路径，否则按 PATH → macOS App 路径找 |
-| `OPENCODE_GO_API_KEY` | 员工必需 | 环境变量，或 `~/.dsh/.credentials.yaml` 里的同名 ref；**面板不会保存明文** |
+| 模型 provider 凭据 | 员工必需 | 由 dsh 实际使用的 provider 决定：key 放环境变量或 `~/.dsh/.credentials.yaml`；**面板不会保存明文** |
 | 网络 | 取数时必需 | `scripts/market` 走新浪/东财/Tushare |
 | Tushare token | 可选 | `runtime/secrets/tushare.json`（chmod 600，已 gitignore）；没有就取不到 Tushare 数据 |
 
@@ -31,16 +31,17 @@ node scripts/init-worktree.js --demo   # 首次运行：建目录 + 可选 demo 
 ```
 
 `start.sh` 会自动加载根目录的 `.env`（已 gitignore），也可以直接 `export`。  
-如果你已有 opencode-go 权限，最小配置就是：
+最小配置是：
 
 ```bash
 cp .env.example .env
-# 编辑 .env，填 OPENCODE_GO_API_KEY=...
+# 按你实际使用的 provider 填 key
 ./start.sh
 ```
 
-默认模型已在 `config/desk.json` 里指向 `opencode-go/deepseek-v4.1-flash`；  
-只要 dsh 和 key 可用，员工就能启动。
+`config/desk.json` 里的 opencode-go 只是示例默认值，不是硬性要求。  
+只要你用的 provider/model 已经在 dsh 里能正常调用，在面板模型配置里填同一组 provider/model 即可；  
+自建 OpenAI 兼容网关再补 base_url。
 
 ## 3.5 可配置项（config/desk.json）
 
@@ -81,6 +82,10 @@ HOST=0.0.0.0 PANEL_TOKEN='换成你的口令' ./start.sh
 ## 5. 模型怎么配（以及现在真正能跑什么）
 
 面板左下角「模型配置」可以（开源默认**不预置任何模型**；作者自己的环境可写进 gitignored 的 `config/desk.local.json`）：
+
+> 下面出现的 `opencode-go/deepseek-v4.1-flash` 只是示例，不是唯一支持项。  
+> 只要 dsh 能正常调用你的 provider/model，就在面板里配置同一组 provider/model；  
+> 需要自建网关时再填 Base URL。
 
 - 改**全员默认模型**；
 - 给**单个员工**指定模型（写入账本 `model.changed`，重启后回放恢复）；
@@ -145,8 +150,8 @@ node runtime/agents/employee.js --agent macro --case case-2026-002 --task 测试
 | 现象 | 原因 / 处理 |
 |---|---|
 | 面板右上「未找到 dsh · 员工无法启动」 | 没装 DeepSeek Harness；`DSH_BIN=/path/to/dsh ./start.sh` |
-| 派活后 `找不到 OPENCODE_GO_API_KEY` | 设环境变量，或写进 `~/.dsh/.credentials.yaml` 的 `OPENCODE_GO_API_KEY` ref |
-| `模型未接入运行时` | 选的是 `verified:false` 且没填 Base URL 的模型；换成 `opencode-go/deepseek-v4.1-flash`，或给自建模型补 Base URL |
+| 派活后 `找不到 <KEY_ENV>` | 按模型配置里的 key_ref 设置对应环境变量，或写进 `~/.dsh/.credentials.yaml` 的同名 ref |
+| `模型未接入运行时` | 选的是 `verified:false` 且没填 Base URL 的模型；换成 dsh 已实测可用的模型，或给自建模型补 Base URL |
 | 派活后 `TRANSPORT / Connection error` | 自建网关连不上：检查 Base URL、端口、网络；patch 已经生成（`runtime/profiles/<agent>.yml`） |
 | `UNSUPPORTED_REASONING_EFFORT` | 自建路由不支持推理档位；当前实现已对自建路由不发 `reasoningEffort`，若仍出现，检查是否手改过 profile |
 | 局域网打不开 | 没用 `HOST=0.0.0.0`，或防火墙拦了端口；用 `--host 0.0.0.0` 且带 `?token=` |
