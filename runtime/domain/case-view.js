@@ -249,6 +249,28 @@ function buildCaseView(opts) {
     updatedAt: new Date().toISOString() };
 }
 
+function evidenceSourceLabel(r) {
+  const raw = String(r.raw || "");
+  const url = String(r.url || "");
+  const tier = String(r.source_tier || r.tier || "");
+  const low = (raw + " " + url + " " + String(r.note || "")).toLowerCase();
+  if (low.includes("tushare")) return "Tushare";
+  if (low.includes("chinabond") || low.includes("中债")) return "中债";
+  if (low.includes("eastmoney") || low.includes("东方财富")) return "东方财富";
+  if (low.includes("stats") || low.includes("统计局")) return "国家统计局";
+  if (low.includes("cninfo") || low.includes("巨潮")) return "巨潮资讯";
+  if (low.includes("nfra")) return "国家金融监督管理总局";
+  if (low.includes("mof") || low.includes("财政部")) return "财政部";
+  if (low.includes("sinajs") || low.includes("新浪")) return "新浪财经";
+  if (low.includes("pbc") || low.includes("人民银行")) return "中国人民银行";
+  if (low.includes("gov.cn")) return "中国政府网";
+  if (low.includes("uploads/") || tier === "upload" || tier === "supervisor-upload") return "用户上传";
+  if (url) { try { return new URL(url).hostname.replace(/^www\./, ""); } catch (e) {} }
+  const tierLabel = { official: "官方来源", "official-filing": "官方披露", "market-api": "市场数据 API",
+    "supervisor-upload": "监督者上传", upload: "用户上传", "internal-check": "内部核验",
+    derived: "衍生计算", mixed: "混合来源" };
+  return tierLabel[tier] || (tier ? ("来源：" + tier) : "未标注来源");
+}
 function knowledgeView(caseId, root) {
   const dir = path.join(root || ROOT, "vault", caseId);
   const ev = evidenceSummary(dir);
@@ -259,7 +281,8 @@ function knowledgeView(caseId, root) {
     const r = byId[x.id] || {};
     const verified = x.status === "verified";
     return { id: x.id, type: "evidence", title: x.field || "", value: String(r.value || "").slice(0, 500),
-      source: r.url || (r.raw ? "local-cache" : ""), dataAsOf: r.fetched_at || "", status: x.status,
+      source: evidenceSourceLabel(r), sourceUrl: r.url || "", sourceRaw: r.raw ? path.basename(r.raw) : "",
+      sourceTier: r.source_tier || "", dataAsOf: r.fetched_at || "", status: x.status,
       scope: "case_only", sensitivity: "internal", license: "existing_source",
       allowedUses: verified ? ["analysis", "report_citation"] : ["analysis"],
       evidenceIds: [x.id] };

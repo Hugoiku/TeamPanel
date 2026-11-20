@@ -6421,11 +6421,38 @@ function ensureFinalReview(caseId, service, rel, version, requester) {
       try { text = fs.readFileSync(vaultPath(caseId, "reports/investor-final.md"), "utf8"); } catch (e) {}
       return json(res, 200, { text, exists: !!text });
     }
+    function evidenceSourceInfo(e) {
+      const raw = String(e.raw || "");
+      const url = String(e.url || "");
+      const tier = String(e.source_tier || e.tier || "");
+      const low = (raw + " " + url + " " + String(e.note || "")).toLowerCase();
+      let label = "";
+      if (low.includes("tushare")) label = "Tushare";
+      else if (low.includes("chinabond") || low.includes("中债")) label = "中债";
+      else if (low.includes("eastmoney") || low.includes("东方财富")) label = "东方财富";
+      else if (low.includes("stats") || low.includes("统计局")) label = "国家统计局";
+      else if (low.includes("cninfo") || low.includes("巨潮")) label = "巨潮资讯";
+      else if (low.includes("nfra")) label = "国家金融监督管理总局";
+      else if (low.includes("mof") || low.includes("财政部")) label = "财政部";
+      else if (low.includes("sinajs") || low.includes("新浪")) label = "新浪财经";
+      else if (low.includes("pbc") || low.includes("pbc.gov") || low.includes("人民银行")) label = "中国人民银行";
+      else if (low.includes("gov.cn")) label = "中国政府网";
+      else if (low.includes("uploads/") || tier === "upload" || tier === "supervisor-upload") label = "用户上传";
+      else if (url) { try { label = new URL(url).hostname.replace(/^www\./, ""); } catch (e) {} }
+      if (!label) {
+        const tierLabel = { official: "官方来源", "official-filing": "官方披露", "market-api": "市场数据 API",
+          "supervisor-upload": "监督者上传", upload: "用户上传", "internal-check": "内部核验",
+          derived: "衍生计算", mixed: "混合来源" };
+        label = tierLabel[tier] || (tier ? ("来源：" + tier) : "未标注来源");
+      }
+      const rawName = raw ? path.basename(raw) : "";
+      return { sourceLabel: label, sourceTier: tier, sourceUrl: url, sourceRaw: rawName };
+    }
     if (p === "/api/evidence" && req.method === "GET") {
       const caseId = u.searchParams.get("case") || "default";
       const items = [];
       const superseded = loadEvidenceSuperseded(caseId);
-      try { for (const line of fs.readFileSync(vaultPath(caseId, "evidence/sources.jsonl"), "utf8").split(String.fromCharCode(10))) { if (!line.trim()) continue; try { const e = JSON.parse(line); const sp = superseded[e.id] || null; items.push({ id: e.id, field: e.field || "", value: typeof e.value === "object" ? JSON.stringify(e.value).slice(0, 1200) : String(e.value || "").slice(0, 1200), url: e.url || "", fetchedAt: e.fetched_at || "", tier: e.source_tier || "", supersededBy: sp ? (sp.supersededBy || "") : "", superseded: !!sp, supersedeReason: sp ? (sp.reason || "") : "", supersededAt: sp ? (sp.at || "") : "" }); } catch (e) {} } } catch (e) {}
+      try { for (const line of fs.readFileSync(vaultPath(caseId, "evidence/sources.jsonl"), "utf8").split(String.fromCharCode(10))) { if (!line.trim()) continue; try { const e = JSON.parse(line); const sp = superseded[e.id] || null; const si = evidenceSourceInfo(e); items.push({ id: e.id, field: e.field || "", value: typeof e.value === "object" ? JSON.stringify(e.value).slice(0, 1200) : String(e.value || "").slice(0, 1200), url: e.url || "", fetchedAt: e.fetched_at || "", tier: e.source_tier || "", sourceLabel: si.sourceLabel, sourceTier: si.sourceTier, sourceUrl: si.sourceUrl, sourceRaw: si.sourceRaw, supersededBy: sp ? (sp.supersededBy || "") : "", superseded: !!sp, supersedeReason: sp ? (sp.reason || "") : "", supersededAt: sp ? (sp.at || "") : "" }); } catch (e) {} } } catch (e) {}
       return json(res, 200, { items });
     }
     if (p === "/api/evidence/supersede" && req.method === "POST") {

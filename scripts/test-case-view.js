@@ -14,7 +14,7 @@ fs.mkdirSync(path.join(base, "evidence"), { recursive: true });
 fs.writeFileSync(path.join(base, "research", "validation.json"), JSON.stringify({ ok: true, high: 0, evidence: 2 }));
 fs.writeFileSync(path.join(base, "research", "brief-macro.json"), JSON.stringify({ stance: "中性", keyClaims: [{ id: "M1" }], keyAssumptions: ["a"] }));
 fs.writeFileSync(path.join(base, "research", "brief-industry.json"), JSON.stringify({ stance: "", keyClaims: [], keyAssumptions: [] }));
-fs.writeFileSync(path.join(base, "evidence", "sources.jsonl"), JSON.stringify({ id: "S1", field: "x", raw: "a", fetched_at: new Date().toISOString() }) + "\n");
+fs.writeFileSync(path.join(base, "evidence", "sources.jsonl"), JSON.stringify({ id: "S1", field: "x", raw: "source-tushare-lpr-1.json", fetched_at: new Date().toISOString() }) + "\n");
 fs.writeFileSync(path.join(base, "research", "claim-evidence.json"), JSON.stringify({ claimsEvidence: [{ id: "M1", mapped: true, refs: ["S1"] }, { id: "M2", mapped: false, refs: [] }] }));
 
 function view(opts) { return cv.buildCaseView(Object.assign({ caseId, root, revision: 1 }, opts)); }
@@ -34,6 +34,9 @@ assert.strictEqual(ready.primaryAction.id, "sign_report");
 assert.strictEqual(ready.quality.claims.total, 2);
 assert.strictEqual(ready.quality.claims.mapped, 1);
 assert.ok(ready.inbox.some(x => x.type === "brief"));
+const kv = cv.knowledgeView(caseId, root);
+assert.strictEqual(kv.entries.find(x => x.id === "S1").source, "Tushare");
+assert.strictEqual(kv.entries.find(x => x.id === "S1").sourceRaw, "source-tushare-lpr-1.json");
 
 const missingReview = view({ plans: [{ id: "P1", status: "approved" }], works: [{ id: "W1", state: "done" }], finalExists: true,
   reviews: [{ service: "audit", status: "clean", path: "reports/final-report.docx" }] });

@@ -3641,8 +3641,10 @@ button.primary{background:#2563eb;border-color:#2563eb;color:#fff}
       // 旧 run-plan 被终止时可能没有 agent.run.finished；以 WorkItem 实际状态为准。
       var running = !end && (liveWork || []).some(function (w) { return w.agent === a && (w.state === "running" || w.state === "cancelling"); });
       var ms = end && end.ms ? end.ms : (running ? Date.now() - Date.parse(st.ts) : 0);
-      var model = (end && end.model) || st.model || (((S.models || {}).byAgent || {})[a] || (S.models || {}).default || {}).model || "未配置";
-      out.push({ agent: a, model: model, running: running, failed: end && end.type === "agent.run.failed",
+      var cfg0 = ((S.models || {}).byAgent || {})[a] || (S.models || {}).default || {};
+      var model = (end && end.model) || st.model || cfg0.model || "未配置";
+      var provider = (end && end.provider) || st.provider || cfg0.provider || "";
+      out.push({ agent: a, model: model, provider: provider, running: running, failed: end && end.type === "agent.run.failed",
         steps: steps.length, tokens: usage, ts: st.ts, ms: ms,
         stage: steps.length ? steps[steps.length - 1].stage : "" });
     });
@@ -3655,9 +3657,9 @@ button.primary{background:#2563eb;border-color:#2563eb;color:#fff}
     // 按"员工 + 模型"去重：每个员工每个模型一行；同一员工的同一模型多轮合并显示
     var byKey = {}, order = [];
     runs.forEach(function (r) {
-      var key = r.agent + "|" + r.model;
+      var key = r.agent + "|" + r.provider + "|" + r.model;
       if (!byKey[key]) {
-        byKey[key] = { agent: r.agent, model: r.model, runs: 0, tokens: 0,
+        byKey[key] = { agent: r.agent, model: r.model, provider: r.provider, runs: 0, tokens: 0,
           running: false, failed: false, lastTs: r.ts, ms: 0, steps: 0, stage: "" };
         order.push(key);
       }
@@ -3682,7 +3684,7 @@ button.primary{background:#2563eb;border-color:#2563eb;color:#fff}
         '<i class="mdot"></i>' +
         '<span class="mav">' + esc((S.agents[r.agent] && S.agents[r.agent].glyph) || "员") + '</span>' +
         '<span class="mwho">' + esc(nm) + '</span>' +
-        '<span class="mmodel">' + esc(String(r.model).split("/").pop()) + '</span>' +
+        '<span class="mmodel" title="' + esc((r.provider ? r.provider + "/" : "") + r.model) + '">' + esc(String(r.model).split("/").pop()) + '</span>' +
         '<span class="mstat">' + status + ' · ' + r.runs + ' 轮</span>' +
         '<span class="mstage">' + (r.steps ? r.steps + ' 步' : '—') + (r.stage ? ' · ' + esc(r.stage) : '') + '</span>' +
         '<span class="mtok">' + (r.tokens ? (r.tokens / 1000).toFixed(1) + 'k' : '—') + '</span>' +
@@ -5675,7 +5677,10 @@ button.primary{background:#2563eb;border-color:#2563eb;color:#fff}
               '<div style="font-size:10px;margin-top:3px;color:' + (col[s] || "#64748b") + '">状态：' + esc(label[s] || s) + '</div>' +
               (x.superseded ? '<div style="font-size:10px;color:#b45309;margin-top:4px">已替代' + (x.supersededBy ? ' → ' + esc(x.supersededBy) : '') + ' · ' + esc(x.supersedeReason || '') + '</div>' : '') +
               '<div style="font-size:11px;color:#334155;line-height:1.6;margin:6px 0;word-break:break-word">' + esc(x.value || "") + '</div>' +
-              '<div style="font-size:9.5px;color:#94a3b8;word-break:break-all">' + esc(x.url || "") + ' · ' + esc(x.fetchedAt || "") + ' · ' + esc(x.tier || "") + '</div>');
+              '<div style="font-size:9.5px;color:#94a3b8;word-break:break-all">' +
+                esc(x.sourceLabel || x.tier || "未标注来源") +
+                (x.sourceRaw ? ' · ' + esc(x.sourceRaw) : (x.url ? ' · ' + esc(x.url) : '')) +
+                ' · ' + esc(x.fetchedAt || "") + (x.tier ? ' · ' + esc(x.tier) : '') + '</div>');
             $("evidenceMask").style.display = "flex";
           });
         };
@@ -6378,7 +6383,7 @@ button.primary{background:#2563eb;border-color:#2563eb;color:#fff}
     fetch(API + "/api/evidence?case=" + encodeURIComponent(CASE_ID)).then(function(r){return r.json();}).then(function(j){
       var x=(j.items||[]).filter(function(z){return z.id===id;})[0]; if(!x)return;
       if($("evidenceTitle"))$("evidenceTitle").textContent="证据 "+x.id;
-      setHTML($("evidenceBody"), '<div style="font-size:10px;color:#64748b">'+esc(x.field||"")+'</div>' + (x.superseded ? '<div style="font-size:10px;color:#b45309;margin-top:4px">已替代'+(x.supersededBy?' → '+esc(x.supersededBy):'')+' · '+esc(x.supersedeReason||'')+'</div>' : '') + '<div style="font-size:11px;color:#334155;line-height:1.6;margin:6px 0;word-break:break-word">'+esc(x.value||"")+'</div><div style="font-size:9.5px;color:#94a3b8;word-break:break-all">'+esc(x.url||"")+' · '+esc(x.fetchedAt||"")+' · '+esc(x.tier||"")+'</div>');
+      setHTML($("evidenceBody"), '<div style="font-size:10px;color:#64748b">'+esc(x.field||"")+'</div>' + (x.superseded ? '<div style="font-size:10px;color:#b45309;margin-top:4px">已替代'+(x.supersededBy?' → '+esc(x.supersededBy):'')+' · '+esc(x.supersedeReason||'')+'</div>' : '') + '<div style="font-size:11px;color:#334155;line-height:1.6;margin:6px 0;word-break:break-word">'+esc(x.value||"")+'</div><div style="font-size:9.5px;color:#94a3b8;word-break:break-all">'+esc(x.sourceLabel||x.tier||"未标注来源")+(x.sourceRaw?' · '+esc(x.sourceRaw):(x.url?' · '+esc(x.url):''))+' · '+esc(x.fetchedAt||"")+(x.tier?' · '+esc(x.tier):'')+'</div>');
       $("evidenceMask").style.display="flex";
     }).catch(function(){});
   }
