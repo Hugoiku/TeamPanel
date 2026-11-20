@@ -1979,6 +1979,10 @@ const server = http.createServer(async (req, res) => {
         args.push("--objective", task || "完成 case 研究并产出可审阅报告");
         args.push("--lease-id", loopId);
         if (["workflow", "supervised", "autonomous"].indexOf(b.autonomy) >= 0) args.push("--autonomy", b.autonomy);
+        // 测试/回放用：fake 模式可注入固定决策，不进入真实模型。
+        if (mode === "fake" && b.fakeDecision && typeof b.fakeDecision === "object") {
+          args.push("--fake-decision", JSON.stringify(b.fakeDecision));
+        }
       }
       else {
         args.push("--agent", agent, "--task", task, "--max-subagents", String(maxSubagents));
