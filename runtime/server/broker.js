@@ -7645,15 +7645,19 @@ function syncFinalManifestReviews(caseId) {
       return json(res, 200, { case: caseId, agents: uu, total });
     }
     if (p === "/api/cases" && req.method === "GET") {
-      const out = Array.from(S.cases.keys()).filter(k => !deletedCases.has(k)).map(k => {
+      const out = Array.from(S.cases.keys()).filter(k => !deletedCases.has(k) &&
+        !/^(lead-test|fanout-test|final-case|mission-final|verify-test|case-view|claimtest)/.test(k)).map(k => {
         const c = cycles.get(k) || { status: "idle" };
         let files = 0;
         S.files.forEach((v, key) => { if (key.indexOf(k + "::") === 0 && v.version > 0) files += 1; });
         const uu = usageOf(k);
         let tokens = 0;
         Object.keys(uu).forEach(a => { tokens += uu[a].total || 0; });
-        return { id: k, name: caseNames.get(k) || null, cycle: c.status, files, tokens,
-          updated: c.finishedAt || c.startedAt || null };
+        let updated = c.finishedAt || c.startedAt || null;
+        if (!updated) {
+          try { updated = fs.statSync(path.join(VAULT, k)).mtime.toISOString(); } catch (e) {}
+        }
+        return { id: k, name: caseNames.get(k) || null, cycle: c.status, files, tokens, updated };
       });
       out.sort((a, b) => String(b.updated || "").localeCompare(String(a.updated || "")));
       return json(res, 200, { cases: out });

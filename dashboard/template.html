@@ -1198,21 +1198,25 @@ button.primary{background:#2563eb;border-color:#2563eb;color:#fff}
     if (typeof S !== "undefined" && S && S.files && S.files[LEGACY_FINAL_REPORT]) return LEGACY_FINAL_REPORT;
     return FINAL_REPORT;
   }
+  var CASE_WAS_EXPLICIT = false;
   var CASE_ID = (function () {
     var q = typeof location !== "undefined" ? (location.search || "") : "";
     var m = /[?&]case=([^&]+)/.exec(q);
     var saved = "";
     try { saved = localStorage.getItem("alphadesk.case") || ""; } catch (e) {}
-    var cid = m ? decodeURIComponent(m[1]) : (saved || "case-2026-001");
-    try { localStorage.setItem("alphadesk.case", cid); } catch (e) {}
-    // 刷新后如果 URL 丢了 case 参数，用上次的 case 并补回 URL，避免面板盯错 case
-    try {
-      if (!m && typeof window !== "undefined" && window.history && window.history.replaceState) {
-        var u = new URL(window.location.href);
-        u.searchParams.set("case", cid);
-        window.history.replaceState(null, "", u.toString());
-      }
-    } catch (e) {}
+    var cid = m ? decodeURIComponent(m[1]) : (saved || "");
+    CASE_WAS_EXPLICIT = !!(m || saved) && !!cid;
+    if (cid) {
+      try { localStorage.setItem("alphadesk.case", cid); } catch (e) {}
+      // 刷新后如果 URL 丢了 case 参数，用上次的 case 并补回 URL，避免面板盯错 case
+      try {
+        if (!m && typeof window !== "undefined" && window.history && window.history.replaceState) {
+          var u = new URL(window.location.href);
+          u.searchParams.set("case", cid);
+          window.history.replaceState(null, "", u.toString());
+        }
+      } catch (e) {}
+    }
     return cid;
   })();
   var ROSTER = [
@@ -1567,6 +1571,11 @@ button.primary{background:#2563eb;border-color:#2563eb;color:#fff}
         liveReviews = (both[8] && both[8].reviews) || null;
         liveKb = (both[9] && both[9].counts) || null;
         liveCases = (both[10] && both[10].cases) || null;
+        if (!CASE_WAS_EXPLICIT && !CASE_ID && liveCases && liveCases.length) {
+          var firstReal = liveCases.filter(function (c) { return (c.files || 0) > 0; })[0] || liveCases[0];
+          location.replace("/live?case=" + encodeURIComponent(firstReal.id));
+          return;
+        }
         liveTrash = (both[11] && both[11].items) || null;
         if ($("btnTrash")) $("btnTrash").textContent = (liveTrash && liveTrash.length ? ("回收站 " + liveTrash.length) : "回收站");
         liveUsage = (both[12] && both[12]) || null;
@@ -8920,7 +8929,7 @@ button.primary{background:#2563eb;border-color:#2563eb;color:#fff}
         .then(function (j) {
           if (j.error) { toast("删除失败：" + j.error); return; }
           toast("已删除 " + j.case + "（移除 " + j.removedFiles + " 个文件）");
-          if (did === CASE_ID) location.href = "/live?case=" + encodeURIComponent("case-2026-001");
+          if (did === CASE_ID) location.href = "/live";
           else livePoll();
         })
         .catch(function (e) { toast("删除失败：" + (e && e.message || e)); });
