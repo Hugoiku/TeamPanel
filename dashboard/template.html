@@ -1861,8 +1861,8 @@ button.primary{background:#2563eb;border-color:#2563eb;color:#fff}
     if (loopN) items.push({ k: "agentLoopBox", label: "Agent 循环 " + loopN });
     var srcN = issueSourceUnavailable();
     if (srcN) items.push({ k: "sourceHealthBox", label: "数据源异常 " + srcN });
-    if (!items.length) { el.innerHTML = '<div class="issueok">当前没有需要你处理的问题</div>'; return; }
-    el.innerHTML = '<div class="issuehead">需要你处理 · 点一下直接定位</div><div class="issuechips">' +
+    if (!items.length) { el.innerHTML = '<div class="issueok">当前没有待处理问题</div>'; return; }
+    el.innerHTML = '<div class="issuehead">状态与问题 · 点一下直接定位</div><div class="issuechips">' +
       items.map(function (x) { return '<button class="issuechip" data-issue="' + esc(x.k) + '">' + esc(x.label) + '</button>'; }).join("") +
       '</div>';
     el.onclick = function (e) {
@@ -5691,7 +5691,7 @@ button.primary{background:#2563eb;border-color:#2563eb;color:#fff}
         var gi = gp.items.slice(-2).map(function (x) { return esc(x.title || x.id || ""); }).join("；");
         if (gi) h += '<div style="font-size:9px;color:#94a3b8;margin-top:2px">' + gi + '</div>';
       }
-      h += row("报告", rp.exists ? (rp.signed ? "已签发" : "待复核/签发") : "未生成", rp.exists ? "#334155" : "#b45309");
+      h += row("报告", rp.exists ? (rp.stale ? "已过期，需重新生成" : (rp.signed ? "已签发" : "待复核/签发")) : "未生成", rp.stale ? "#dc2626" : (rp.exists ? "#334155" : "#b45309"));
       if (issues.length) h += '<div style="font-size:9px;color:#b45309;margin-top:4px">' + issues.slice(0, 4).map(function (x) { return esc(x.title || ""); }).join("<br>") + '</div>';
       setHTML(el, h);
     }).catch(function () {});
@@ -5773,11 +5773,19 @@ button.primary{background:#2563eb;border-color:#2563eb;color:#fff}
           '<div style="font-size:9.5px;color:#64748b;margin-top:4px">证据 ' + ((q.evidence && q.evidence.verified) || 0) + '/' + ((q.evidence && q.evidence.total) || 0) +
           ' · claim ' + ((q.claims && q.claims.mapped) || 0) + '/' + ((q.claims && q.claims.total) || 0) +
           ' · brief ' + ((q.briefs && q.briefs.complete) || 0) + '/' + ((q.briefs && q.briefs.total) || 0) +
-          (q.report && q.report.exists ? (' · 报告 ' + (q.report.signed ? "已签发" : "待复核/签发")) : '') + '</div>';
+          (q.report && q.report.exists ? (' · 报告 ' + (q.report.stale ? "已过期" : (q.report.signed ? "已签发" : "待复核/签发"))) : '') + '</div>';
         var high = (v.blocking || []).slice(0, 2);
         if (high.length) h += '<div style="margin-top:3px;font-size:9px;color:#b45309">' + high.map(function (x) { return esc(x.title || ""); }).join("；") + '</div>';
         el.innerHTML = h;
         el.style.display = "flex";
+        var sb = $("btnSign");
+        if (sb) {
+          var canSign = v.phase === "READY_TO_SIGN";
+          sb.disabled = !canSign;
+          sb.title = canSign ? "签发报告" : ("当前不可签发：" + (v.phase === "REPORT_STALE" ? "报告已过期，请重新生成" : (v.primaryAction && v.primaryAction.label) || v.phase));
+          sb.style.opacity = canSign ? "" : ".55";
+          sb.style.cursor = canSign ? "" : "not-allowed";
+        }
       }).catch(function () {});
   }
   function renderNextStep() {
@@ -8147,7 +8155,7 @@ button.primary{background:#2563eb;border-color:#2563eb;color:#fff}
         preflightAndStartPlans(pls0, "已启动"); return;
       }
       if (ca === "continue_execution") { resumeExecution(); return; }
-      if (ca === "generate_report") {
+      if (ca === "generate_report" || ca === "regenerate_report") {
         fetch(API + "/api/report/final", { method: "POST", headers: { "content-type": "application/json" },
           body: JSON.stringify({ case: CASE_ID, by: "you" }) }).then(function (r) { return r.json(); })
           .then(function (j) { toast(j.error ? ("最终报告失败：" + j.error) : "最终报告已生成"); livePoll(); })

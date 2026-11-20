@@ -6268,6 +6268,8 @@ function ensureFinalReview(caseId, service, rel, version, requester) {
     if (p === "/api/case/view" && req.method === "GET") {
       const caseId = u.searchParams.get("case") || "default";
       const finalExists = fs.existsSync(vaultPath(caseId, "reports/final-report.docx"));
+      let consistency = null;
+      try { consistency = reportConsistency(caseId); } catch (e) {}
       const view = caseView.buildCaseView({
         caseId,
         plans: plans.get(caseId) || [],
@@ -6276,6 +6278,8 @@ function ensureFinalReview(caseId, service, rel, version, requester) {
         reviews: reviews.get(caseId) || [],
         signatures: reportSignatures.get(caseId) || {},
         finalExists,
+        reportStale: !!(consistency && consistency.stale),
+        staleReasons: (consistency && consistency.mismatches || []).map(x => x.path || x.field || String(x)).slice(0, 6),
         revision: S.seq
       });
       return json(res, 200, view);

@@ -88,6 +88,7 @@ function reportSummary(caseDir, reviews, signatures, finalExists) {
   const audit = latest("audit"), legal = latest("legal");
   return { exists: !!finalExists, manifest: manifest.version || 0,
     audit: audit ? audit.status : "missing", legal: legal ? legal.status : "missing",
+    stale: false, staleReasons: [],
     signed: !!sig, signature: sig ? { by: sig.by, at: sig.at, version: sig.version } : null };
 }
 
@@ -112,6 +113,7 @@ function derivePhase(input) {
   if (humanNeeds.length) return "DATA_GAP";
   if (failed) return "RUNNING";
   if (allWorkDone && !report.exists) return "DRAFT_READY";
+  if (report.exists && report.stale) return "REPORT_STALE";
   if (report.exists && report.signed) return "SIGNED";
   if (report.exists && reviewPending) return "REVIEW_PENDING";
   if (report.exists && reviewFailed) return "REVIEW_FAILED";
@@ -124,14 +126,14 @@ function derivePhase(input) {
 const PHASE_LABEL = {
   PREPARE: "准备", PLAN_PENDING: "待批准", READY_TO_RUN: "待启动",
   RUNNING: "执行中", DATA_GAP: "待补数据", DRAFT_READY: "初稿完成",
-  REVIEW_PENDING: "待复核", REVIEW_FAILED: "复核未通过",
+  REPORT_STALE: "报告过期", REVIEW_PENDING: "待复核", REVIEW_FAILED: "复核未通过",
   READY_TO_SIGN: "待签发", SIGNED: "已签发", VERIFIED: "已完成"
 };
 // 用户只看到 7 个阶段；内部 phase 仍保留细粒度，避免 UI 状态爆炸。
 const USER_STAGE = {
   PREPARE: "准备", PLAN_PENDING: "待批准", READY_TO_RUN: "执行中",
   RUNNING: "执行中", DATA_GAP: "待补数据", DRAFT_READY: "执行中",
-  REVIEW_PENDING: "待复核", REVIEW_FAILED: "待复核",
+  REPORT_STALE: "待更新", REVIEW_PENDING: "待复核", REVIEW_FAILED: "待复核",
   READY_TO_SIGN: "待签发", SIGNED: "完成", VERIFIED: "完成"
 };
 
@@ -143,6 +145,7 @@ function nextAction(phase, input) {
   if (phase === "READY_TO_RUN") return { id: "start_execution", label: "启动执行", owner: "system", enabled: true };
   if (phase === "DATA_GAP") return { id: "fill_data", label: "去补数据", owner: "human", enabled: true };
   if (phase === "DRAFT_READY") return { id: "generate_report", label: "生成最终报告", owner: "system", enabled: true };
+  if (phase === "REPORT_STALE") return { id: "regenerate_report", label: "重新生成报告", owner: "system", enabled: true };
   if (phase === "REVIEW_PENDING") {
     const missing = [report.audit === "missing" ? "audit" : "", report.legal === "missing" ? "legal" : ""].filter(Boolean);
     if (missing.length) return { id: "request_review", label: "发起" + (missing.includes("audit") ? "审计" : "") + (missing.includes("legal") ? "法务" : "") + "复核", owner: "human", enabled: true, services: missing };
@@ -174,6 +177,9 @@ function buildInbox(phase, input) {
   });
   if (phase === "DRAFT_READY") inbox.push({ id: "report:missing", type: "report", severity: "info",
     title: "初稿已完成，待生成最终报告", action: "generate_report" });
+  if (report.exists && report.stale) inbox.push({ id: "report:stale", type: "report", severity: "high",
+    title: "报告已过期，需要重新生成", action: "regenerate_report",
+    detail: (report.staleReasons || []).slice(0, 3).join("；") });
   if (report.exists && report.audit === "missing") inbox.push({ id: "review:audit:missing", type: "review", severity: "warn",
     title: "尚未发起审计复核", action: "request_review", ref: "audit" });
   if (report.exists && report.legal === "missing") inbox.push({ id: "review:legal:missing", type: "review", severity: "warn",
@@ -199,6 +205,8 @@ function buildCaseView(opts) {
   const claims = claimSummary(caseDir);
   const briefs = briefSummary(caseDir);
   const report = reportSummary(caseDir, opts.reviews, opts.signatures, opts.finalExists);
+  report.stale = !!opts.reportStale;
+  report.staleReasons = opts.staleReasons || [];
   const input = { plans: opts.plans || [], works: opts.works || [], needs: opts.needs || [],
     report, evidence, claims, briefs };
   const phase = derivePhase(input);
@@ -219,7 +227,7 @@ function buildCaseView(opts) {
         reason: n.waiveReason || n.answer || ""
       })).slice(-50)
     },
-    report: { exists: report.exists, audit: report.audit, legal: report.legal, signed: report.signed }
+    report: { exists: report.exists, audit: report.audit, legal: report.legal, stale: report.stale, signed: report.signed }
   };
   return { case: caseId, revision: opts.revision || 0, phase, phaseLabel: PHASE_LABEL[phase] || phase,
     stage: USER_STAGE[phase] || phase, stageLabel: USER_STAGE[phase] || phase,

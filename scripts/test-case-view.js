@@ -41,6 +41,13 @@ assert.strictEqual(missingReview.phase, "REVIEW_PENDING");
 assert.strictEqual(missingReview.primaryAction.id, "request_review");
 assert.deepStrictEqual(missingReview.primaryAction.services, ["legal"]);
 
+const stale = view({ plans: [{ id: "P1", status: "approved" }], works: [{ id: "W1", state: "done" }], finalExists: true,
+  reportStale: true, staleReasons: ["research/figures.json changed"],
+  reviews: [{ service: "audit", status: "requested", path: "reports/final-report.docx" }] });
+assert.strictEqual(stale.phase, "REPORT_STALE");
+assert.strictEqual(stale.primaryAction.id, "regenerate_report");
+assert.ok(stale.blocking.some(x => x.id === "report:stale"));
+
 const signed = view({ plans: [{ id: "P1", status: "approved" }], works: [{ id: "W1", state: "done" }], finalExists: true,
   reviews: [{ service: "audit", status: "clean", path: "reports/final-report.docx" },
     { service: "legal", status: "clean", path: "reports/final-report.docx" }],
