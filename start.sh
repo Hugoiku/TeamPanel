@@ -38,5 +38,5 @@ fi
 ARGS=(--port "$PORT" --host "$HOST")
 if [ -n "${PANEL_TOKEN:-}" ]; then ARGS+=(--token "$PANEL_TOKEN"); fi
 
-echo "[start] 面板：http://$HOST:$PORT/live?case=case-2026-001"
+echo "[start] 面板：http://$HOST:$PORT/live"
 exec node runtime/server/broker.js "${ARGS[@]}"
