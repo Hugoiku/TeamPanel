@@ -147,7 +147,7 @@ function nextAction(phase, input) {
   if (phase === "DRAFT_READY") return { id: "generate_report", label: "生成最终报告", owner: "system", enabled: true };
   if (phase === "REPORT_STALE") {
     if (input.crossReview && input.crossReview.high > 0)
-      return { id: "fix_cross_review", label: "处理交叉复核", owner: "human", enabled: true };
+      return { id: "fix_cross_review", label: "查看交叉复核", owner: "human", enabled: true };
     return { id: "regenerate_report", label: "重新生成报告", owner: "system", enabled: true };
   }
   if (phase === "REVIEW_PENDING") {
