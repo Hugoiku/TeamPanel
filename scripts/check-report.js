@@ -16,7 +16,7 @@ const MIN_CHARS = parseInt(arg("min-chars", "1200"), 10);
 const MIN_REFS = parseInt(arg("min-refs", "50"), 10);
 const MIN_FIGS = parseInt(arg("min-figs", "2"), 10);
 const WRITE = process.argv.indexOf("--write") >= 0;
-const PATH = arg("path", "final_report.md");
+const PATH = arg("path", "reports/investor-final.md");
 function desk(args) {
   const r = spawnSync(process.execPath, ["scripts/desk"].concat(args), { cwd: ROOT, encoding: "utf8",
     env: Object.assign({}, process.env, { DESK_CASE: CASE, DESK_ACTOR: "lead" }) });
