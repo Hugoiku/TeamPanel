@@ -271,6 +271,16 @@ function evidenceSourceLabel(r) {
     derived: "衍生计算", mixed: "混合来源" };
   return tierLabel[tier] || (tier ? ("来源：" + tier) : "未标注来源");
 }
+function evidenceSourceType(r) {
+  const raw = String(r.raw || "");
+  const url = String(r.url || "");
+  const tier = String(r.source_tier || r.tier || "");
+  if (tier === "upload" || tier === "supervisor-upload" || url.startsWith("uploads/") || raw.includes("/uploads/")) return "file";
+  if (/^https?:\/\//i.test(url)) return "url";
+  if (raw) return "connector";
+  if (tier === "derived" || tier === "internal-check") return "derived";
+  return "other";
+}
 function knowledgeView(caseId, root) {
   const dir = path.join(root || ROOT, "vault", caseId);
   const ev = evidenceSummary(dir);
@@ -282,7 +292,8 @@ function knowledgeView(caseId, root) {
     const verified = x.status === "verified";
     return { id: x.id, type: "evidence", title: x.field || "", value: String(r.value || "").slice(0, 500),
       source: evidenceSourceLabel(r), sourceUrl: r.url || "", sourceRaw: r.raw ? path.basename(r.raw) : "",
-      sourceTier: r.source_tier || "", dataAsOf: r.fetched_at || "", status: x.status,
+      sourceType: evidenceSourceType(r), fileName: String(r.url || "").startsWith("uploads/") ? path.basename(r.url) : (r.raw ? path.basename(r.raw) : ""),
+      sha256: String(r.sha256 || ""), sourceTier: r.source_tier || "", dataAsOf: r.fetched_at || "", status: x.status,
       scope: "case_only", sensitivity: "internal", license: "existing_source",
       allowedUses: verified ? ["analysis", "report_citation"] : ["analysis"],
       evidenceIds: [x.id] };

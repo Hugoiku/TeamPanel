@@ -244,10 +244,12 @@ async function addEvidence(info) {
   if (!hash && info.raw) {
     try { hash = crypto.createHash("sha256").update(fs.readFileSync(path.join(ROOT, info.raw))).digest("hex"); } catch (e) {}
   }
+  const sourceType = info.sourceType || (String(info.url || "").startsWith("uploads/") ? "file" : (info.url ? "url" : "connector"));
   const rec = { id: "S" + (maxN + 1), url: info.url, fetched_at: info.fetchedAt || new Date().toISOString(),
     field: arg("field", "") || info.evidenceField || info.title || "网页内容",
     value: arg("value", "") || info.evidenceValue || String(info.preview || "").slice(0, 160),
     raw: info.raw || info.out || "", note: arg("note", "") || "collect 自动入库", auto: true,
+    source_type: sourceType, file_name: info.fileName || (info.raw ? require("path").basename(info.raw) : ""),
     source_tier: info.sourceTier || "", sha256: hash };
   const body = (text ? text.replace(/\n?$/, "\n") : "") + JSON.stringify(rec) + "\n";
   const tmp = path.join(CACHE, "evidence-" + sha(rec.id + rec.url) + ".jsonl");

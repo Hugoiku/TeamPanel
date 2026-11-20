@@ -6446,13 +6446,21 @@ function ensureFinalReview(caseId, service, rel, version, requester) {
         label = tierLabel[tier] || (tier ? ("来源：" + tier) : "未标注来源");
       }
       const rawName = raw ? path.basename(raw) : "";
-      return { sourceLabel: label, sourceTier: tier, sourceUrl: url, sourceRaw: rawName };
+      const fileName = String(url).startsWith("uploads/") ? path.basename(url) : (rawName || "");
+      let sourceType = "other";
+      if (tier === "upload" || tier === "supervisor-upload" || String(url).startsWith("uploads/") || raw.includes("/uploads/")) sourceType = "file";
+      else if (/^https?:\/\//i.test(url)) sourceType = "url";
+      else if (raw) sourceType = "connector";
+      else if (tier === "derived" || tier === "internal-check") sourceType = "derived";
+      return { sourceLabel: label, sourceTier: tier, sourceUrl: url, sourceRaw: rawName,
+        sourceType, fileName, sha256: String(e.sha256 || "") };
     }
     if (p === "/api/evidence" && req.method === "GET") {
       const caseId = u.searchParams.get("case") || "default";
       const items = [];
       const superseded = loadEvidenceSuperseded(caseId);
-      try { for (const line of fs.readFileSync(vaultPath(caseId, "evidence/sources.jsonl"), "utf8").split(String.fromCharCode(10))) { if (!line.trim()) continue; try { const e = JSON.parse(line); const sp = superseded[e.id] || null; const si = evidenceSourceInfo(e); items.push({ id: e.id, field: e.field || "", value: typeof e.value === "object" ? JSON.stringify(e.value).slice(0, 1200) : String(e.value || "").slice(0, 1200), url: e.url || "", fetchedAt: e.fetched_at || "", tier: e.source_tier || "", sourceLabel: si.sourceLabel, sourceTier: si.sourceTier, sourceUrl: si.sourceUrl, sourceRaw: si.sourceRaw, supersededBy: sp ? (sp.supersededBy || "") : "", superseded: !!sp, supersedeReason: sp ? (sp.reason || "") : "", supersededAt: sp ? (sp.at || "") : "" }); } catch (e) {} } } catch (e) {}
+      try { for (const line of fs.readFileSync(vaultPath(caseId, "evidence/sources.jsonl"), "utf8").split(String.fromCharCode(10))) { if (!line.trim()) continue; try { const e = JSON.parse(line); const sp = superseded[e.id] || null; const si = evidenceSourceInfo(e); items.push({ id: e.id, field: e.field || "", value: typeof e.value === "object" ? JSON.stringify(e.value).slice(0, 1200) : String(e.value || "").slice(0, 1200), url: e.url || "", fetchedAt: e.fetched_at || "", tier: e.source_tier || "", sourceLabel: si.sourceLabel, sourceTier: si.sourceTier, sourceUrl: si.sourceUrl, sourceRaw: si.sourceRaw,
+                sourceType: si.sourceType, fileName: si.fileName, sha256: si.sha256, supersededBy: sp ? (sp.supersededBy || "") : "", superseded: !!sp, supersedeReason: sp ? (sp.reason || "") : "", supersededAt: sp ? (sp.at || "") : "" }); } catch (e) {} } } catch (e) {}
       return json(res, 200, { items });
     }
     if (p === "/api/evidence/supersede" && req.method === "POST") {

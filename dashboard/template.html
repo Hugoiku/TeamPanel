@@ -5677,10 +5677,7 @@ button.primary{background:#2563eb;border-color:#2563eb;color:#fff}
               '<div style="font-size:10px;margin-top:3px;color:' + (col[s] || "#64748b") + '">状态：' + esc(label[s] || s) + '</div>' +
               (x.superseded ? '<div style="font-size:10px;color:#b45309;margin-top:4px">已替代' + (x.supersededBy ? ' → ' + esc(x.supersededBy) : '') + ' · ' + esc(x.supersedeReason || '') + '</div>' : '') +
               '<div style="font-size:11px;color:#334155;line-height:1.6;margin:6px 0;word-break:break-word">' + esc(x.value || "") + '</div>' +
-              '<div style="font-size:9.5px;color:#94a3b8;word-break:break-all">' +
-                esc(x.sourceLabel || x.tier || "未标注来源") +
-                (x.sourceRaw ? ' · ' + esc(x.sourceRaw) : (x.url ? ' · ' + esc(x.url) : '')) +
-                ' · ' + esc(x.fetchedAt || "") + (x.tier ? ' · ' + esc(x.tier) : '') + '</div>');
+              '<div style="font-size:9.5px;color:#94a3b8;word-break:break-all">' + evidenceSourceLine(x) + '</div>');
             $("evidenceMask").style.display = "flex";
           });
         };
@@ -5764,6 +5761,18 @@ button.primary{background:#2563eb;border-color:#2563eb;color:#fff}
       if (kf) kf.oninput = applyKFilter;
       if (ks) ks.onchange = applyKFilter;
     }).catch(function () {});
+  }
+  function evidenceSourceLine(x) {
+    var typeLabel = { file: "文件", url: "网页", connector: "连接器", derived: "衍生", other: "来源" }[x.sourceType] || "来源";
+    var locator = x.sourceType === "file" ? (x.fileName || x.sourceRaw || x.sourceUrl || "") :
+      (x.sourceType === "url" ? (x.sourceUrl || "") : (x.sourceRaw || x.sourceUrl || ""));
+    var hash = x.sha256 ? ("sha " + String(x.sha256).slice(0, 10)) :
+      (x.sourceType === "file" ? "sha256 未记录" : "");
+    return esc(x.sourceLabel || "未标注来源") + " · " + typeLabel +
+      (locator ? " · " + esc(locator) : "") +
+      (x.fetchedAt ? " · " + esc(x.fetchedAt) : "") +
+      (x.tier ? " · " + esc(x.tier) : "") +
+      (hash ? ' · <span style="color:' + (x.sha256 ? "#059669" : "#b45309") + '">' + esc(hash) + '</span>' : '');
   }
   function showInfoDetail(title, html) {
     if ($("evidenceTitle")) $("evidenceTitle").textContent = title;
@@ -6383,7 +6392,7 @@ button.primary{background:#2563eb;border-color:#2563eb;color:#fff}
     fetch(API + "/api/evidence?case=" + encodeURIComponent(CASE_ID)).then(function(r){return r.json();}).then(function(j){
       var x=(j.items||[]).filter(function(z){return z.id===id;})[0]; if(!x)return;
       if($("evidenceTitle"))$("evidenceTitle").textContent="证据 "+x.id;
-      setHTML($("evidenceBody"), '<div style="font-size:10px;color:#64748b">'+esc(x.field||"")+'</div>' + (x.superseded ? '<div style="font-size:10px;color:#b45309;margin-top:4px">已替代'+(x.supersededBy?' → '+esc(x.supersededBy):'')+' · '+esc(x.supersedeReason||'')+'</div>' : '') + '<div style="font-size:11px;color:#334155;line-height:1.6;margin:6px 0;word-break:break-word">'+esc(x.value||"")+'</div><div style="font-size:9.5px;color:#94a3b8;word-break:break-all">'+esc(x.sourceLabel||x.tier||"未标注来源")+(x.sourceRaw?' · '+esc(x.sourceRaw):(x.url?' · '+esc(x.url):''))+' · '+esc(x.fetchedAt||"")+(x.tier?' · '+esc(x.tier):'')+'</div>');
+      setHTML($("evidenceBody"), '<div style="font-size:10px;color:#64748b">'+esc(x.field||"")+'</div>' + (x.superseded ? '<div style="font-size:10px;color:#b45309;margin-top:4px">已替代'+(x.supersededBy?' → '+esc(x.supersededBy):'')+' · '+esc(x.supersedeReason||'')+'</div>' : '') + '<div style="font-size:11px;color:#334155;line-height:1.6;margin:6px 0;word-break:break-word">'+esc(x.value||"")+'</div><div style="font-size:9.5px;color:#94a3b8;word-break:break-all">'+evidenceSourceLine(x)+'</div>');
       $("evidenceMask").style.display="flex";
     }).catch(function(){});
   }
@@ -8163,7 +8172,10 @@ button.primary{background:#2563eb;border-color:#2563eb;color:#fff}
         showInfoDetail((x.type === "claim" ? "Claim " : "证据 ") + x.id, '<div style="font-size:10px;color:' + (x.status === "verified" || x.status === "mapped" ? "#059669" : "#b45309") + '">' + esc(x.status) + '</div>' +
           '<div style="font-size:11px;color:#334155;line-height:1.7;margin:6px 0;word-break:break-word">' + esc(x.value || x.title || "") + '</div>' +
           '<div style="font-size:9.5px;color:#94a3b8;word-break:break-all">scope: ' + esc(x.scope || "") + ' · uses: ' + esc((x.allowedUses || []).join(",")) + '</div>' +
-          '<div style="font-size:9.5px;color:#94a3b8;word-break:break-all">source: ' + esc(x.source || "") + '</div>');
+          '<div style="font-size:9.5px;color:#94a3b8;word-break:break-all">source: ' + esc(x.source || "") +
+            (x.sourceType ? ' · ' + esc({ file: "文件", url: "网页", connector: "连接器", derived: "衍生" }[x.sourceType] || x.sourceType) : '') +
+            (x.fileName ? ' · ' + esc(x.fileName) : '') +
+            (x.sha256 ? ' · sha ' + esc(String(x.sha256).slice(0, 10)) : (x.sourceType === "file" ? ' · sha256 未记录' : '')) + '</div>');
       });
       return;
     }
