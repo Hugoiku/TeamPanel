@@ -6314,7 +6314,10 @@ button.primary{background:#2563eb;border-color:#2563eb;color:#fff}
         '<div class="dactions"><button class="skbtn" data-valuation-inputs="1">去补输入</button><button class="skbtn" data-val-need="' + esc(method + "|" + valMeta.result.missing.join(",")) + '">创建数据需求</button></div></div>';
     }
     if (!method) {
-      h += '<div class="dcard" style="border-color:#fed7aa;background:#fffbeb"><div class="dlabel">尚未选择估值方法</div><div class="dtext">先判断行业适用哪种方法，再填写输入；新 case 不默认套 DCF。</div><div class="dactions"><button class="skbtn" data-valuation-inputs="1">选择/填写方法输入</button></div></div>';
+      var hasStockValuation = !!(c.stock && c.stock.valuation && Object.keys(c.stock.valuation).length);
+      h += '<div class="dcard" style="border-color:#fed7aa;background:#fffbeb"><div class="dlabel">估值引擎未调用</div><div class="dtext">' +
+        (hasStockValuation ? "底稿里已有估值数据，但估值引擎需要先显式选择方法并填写输入，不会自动套用。" : "先判断行业适用哪种方法，再填写输入；新 case 不默认套 DCF。") +
+        '</div><div class="dactions"><button class="skbtn" data-valuation-inputs="1">选择/填写方法输入</button></div></div>';
       setHTML(el, h);
       var vselE = $("valuationMethodSel"); if (vselE) { vselE.value = ""; vselE.onchange = function () { fetch(API + "/api/valuation", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ case: CASE_ID, method: vselE.value, by: "you" }) }).then(function (r) { return r.json(); }).then(function (res) { toast(res.ok ? "估值方法已切换" : "切换失败"); renderInvestorDash(); }); }; }
       return;
@@ -6470,7 +6473,9 @@ button.primary{background:#2563eb;border-color:#2563eb;color:#fff}
         '<div><div class="dlabel">现价</div><div class="dnum" style="font-size:13px">' + (c.stock && c.stock.price ? esc(String(c.stock.price)) : "—") + '</div></div>' +
         '<div><div class="dlabel">DCF 下限</div><div class="dnum" style="font-size:13px">' + (dcfv.per_share || "—") + '</div></div>' +
         '</div></div>';
-      h += '<div class="dgrid"><div class="dcard"><div class="dlabel">行业</div><div class="dtext">'+esc(String((c.industry&&c.industry.stance)||"待补").slice(0,180))+'</div></div>' +
+      var indView = (c.industry && (c.industry.industryView || c.industry.industry_view)) || {};
+      var indText = (c.industry && c.industry.stance) || indView.direction || (c.industry && c.industry.direction) || "待补";
+      h += '<div class="dgrid"><div class="dcard"><div class="dlabel">行业</div><div class="dtext">'+esc(String(indText).slice(0,180))+'</div></div>' +
         '<div class="dcard"><div class="dlabel">公司 / 评级</div><div class="dnum">'+esc((c.stock&&c.stock.rating)||"待定")+'</div><div class="dsub">'+(c.stock&&c.stock.target?'目标 '+esc(JSON.stringify(c.stock.target)):'不设目标价')+'</div></div></div>';
       var claims = ((c.industry&&c.industry.claims)||[]).concat((c.stock&&c.stock.claims)||[]).slice(0,3);
       if (claims.length) { h += '<div class="dcard"><div class="dlabel">关键事实</div>'; claims.forEach(function(x){h+='<div class="drow">'+esc(String(x.text||"").slice(0,120))+' <span style="color:#94a3b8">'+(x.source||"")+'</span></div>';}); h+='</div>'; }

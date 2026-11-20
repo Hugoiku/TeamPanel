@@ -13,7 +13,14 @@ let j = null, md = "";
 try { j = JSON.parse(fs.readFileSync(jsonPath, "utf8")); } catch (e) {}
 try { md = fs.readFileSync(mdPath, "utf8"); } catch (e) {}
 const headings = md.split(String.fromCharCode(10)).filter(x => /^#{1,6}\s/.test(x)).map(x => x.replace(/^#+\s*/, ""));
-const claims = (j && j.claims || []).slice(0, 12).map(c => ({ id: c.id, text: c.text, source: c.source || "", confidence: c.confidence }));
+const iv = (j && (j.industryView || j.industry_view)) || {};
+let claims = (j && j.claims || []).slice(0, 12).map(c => ({ id: c.id, text: c.text, source: c.source || "", confidence: c.confidence }));
+if (!claims.length && Array.isArray(iv.keyVariables)) {
+  claims = iv.keyVariables.slice(0, 12).map((x, i) => ({
+    id: "I" + (i + 1), text: [x.name, x.value, x.direction].filter(Boolean).join("："),
+    source: (x.evidence || []).join(","), confidence: x.confidence || 0.7
+  }));
+}
 function assumptionsOf(x) {
   const out = [];
   if (!x) return out;
@@ -31,9 +38,9 @@ const brief = {
   version: 1, role: AGENT, case: CASE,
   sourceVersion: (j && j.version) || 0,
   horizon: (j && j.horizon) || "",
-  stance: (j && (j.stance || j.direction || j.rating)) || "",
+  stance: (j && (j.stance || j.direction || j.rating || iv.direction)) || "",
   keyClaims: claims,
-  keyAssumptions: assumptionsOf(j),
+  keyAssumptions: assumptionsOf(j).concat((iv.inferences || []).slice(0, 3).map(x => String(x))).slice(0, 10),
   inputsFrom: AGENT === "stock" ? ["macro", "industry"] : (AGENT === "industry" ? ["macro", "stock"] : ["industry", "stock"]),
   dataGaps: ((j && (j.gaps || j.needs)) || []).slice(0, 8),
   reportSections: headings.slice(0, 20),

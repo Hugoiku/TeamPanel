@@ -6556,6 +6556,19 @@ function ensureFinalReview(caseId, service, rel, version, requester) {
       let claims = null, catalysts = null;
       try { claims = JSON.parse(fs.readFileSync(vaultPath(caseId, "research/claims.json"), "utf8")); } catch (e) {}
       try { catalysts = JSON.parse(fs.readFileSync(vaultPath(caseId, "research/catalysts.json"), "utf8")); } catch (e) {}
+      let industryRaw = null;
+      try { industryRaw = JSON.parse(fs.readFileSync(vaultPath(caseId, "research/industry.json"), "utf8")); } catch (e) {}
+      const iv0 = (industryRaw && (industryRaw.industryView || industryRaw.industry_view)) || null;
+      if (claims && claims.industry && iv0) {
+        claims.industry.industryView = iv0;
+        if (!claims.industry.stance) claims.industry.stance = iv0.direction || "";
+        if (!(claims.industry.claims || []).length) {
+          claims.industry.claims = (iv0.keyVariables || []).slice(0, 5).map((x, i) => ({
+            id: "I" + (i + 1), text: [x.name, x.value, x.direction].filter(Boolean).join("："),
+            source: (x.evidence || []).join(","), confidence: 0.7, kind: "fact"
+          }));
+        }
+      }
       const finalExists = fs.existsSync(vaultPath(caseId, "reports/final-report.docx"));
       let signed = false;
       try {

@@ -31,20 +31,29 @@ if (investmentModel && investmentModel.computed && jsons.stock.valuation) {
 const clean = s => String(s || "").replace(/本轮修订[\s\S]*?(?=\n|$)/g, "").replace(/\b(v\d+|R1|本版|本稿假设|门控|token)\b/g, "").trim();
 const claims = a => (briefs[a].keyClaims || []).slice(0, 5).map((c, i) => ({ id: a[0].toUpperCase() + (i + 1), text: clean(c.text), source: c.source || "", confidence: c.confidence || 0.7,
   kind: /本稿假设|WACC|DCF/.test(String(c.text || "")) ? "assumption" : (/2026E|2027E|预计|预测|测算/.test(String(c.text || "")) ? "forecast" : "fact") }));
+const iv = jsons.industry.industryView || jsons.industry.industry_view || {};
 const out = {
   case: CASE, generatedAt: new Date().toISOString(),
   thesis: clean(jsons.stock.sector_view || briefs.stock.stance || briefs.industry.stance || ""),
   macro: { stance: clean(briefs.macro.stance || jsons.macro.stance), claims: claims("macro"), risks: clean(jsons.macro.key_risk || "") },
-  industry: { stance: clean(briefs.industry.stance || jsons.industry.direction || jsons.industry.summary),
-    claims: claims("industry").length ? claims("industry") : [clean(jsons.industry.summary)].filter(Boolean).map((t, i) => ({ id: "I" + (i + 1), text: t, source: [...new Set((String(t).match(/S\d+/g) || []))].join(";"), confidence: 0.7,
-      kind: /本稿假设|WACC|DCF/.test(String(t)) ? "assumption" : (/2026E|2027E|预计|预测|测算/.test(String(t)) ? "forecast" : "fact"), confidence: 0.7 })),
-    variables: (jsons.industry.key_variables || []).slice(0, 5).map(x => ({ name: clean(x.name), why: clean(x.why), monitor: clean(x.monitor), evidence: x.evidence || [] })),
-    watchItems: (jsons.industry.key_variables || []).slice(0, 4).map(x => clean(x.monitor || x.name)),
-    risks: (jsons.industry.risks || []).slice(0, 5).map(x => clean(x.name + "：" + x.detail) + ((x.evidence || []).length ? " [" + x.evidence.join("][") + "]" : "")),
+  industry: (() => {
+    const fbClaims = (iv.keyVariables || []).slice(0, 5).map((x, i) => ({
+      id: "I" + (i + 1), text: clean([x.name, x.value, x.direction].filter(Boolean).join("：")),
+      source: (x.evidence || []).join(","), confidence: x.confidence || 0.7, kind: "fact"
+    }));
+    const baseClaims = claims("industry");
+    return {
+      stance: clean(briefs.industry.stance || jsons.industry.direction || iv.direction || jsons.industry.summary),
+      claims: baseClaims.length ? baseClaims : (fbClaims.length ? fbClaims : [clean(jsons.industry.summary)].filter(Boolean).map((t, i) => ({ id: "I" + (i + 1), text: t, source: [...new Set((String(t).match(/S\d+/g) || []))].join(";"), confidence: 0.7, kind: "fact" }))),
+      variables: (jsons.industry.keyVariables || iv.keyVariables || []).slice(0, 5).map(x => ({ name: clean(x.name), why: clean(x.why || x.direction), monitor: clean(x.monitor || x.name), evidence: x.evidence || [] })),
+      watchItems: (jsons.industry.keyVariables || iv.keyVariables || []).slice(0, 4).map(x => clean(x.monitor || x.name)),
+      risks: (jsons.industry.risks || iv.inferences || []).slice(0, 5).map(x => typeof x === "string" ? clean(x) : clean(x.name + "：" + x.detail) + ((x.evidence || []).length ? " [" + x.evidence.join("][") + "]" : "")),
     gaps: (briefs.industry.dataGaps || []).slice(0, 3).map(clean),
-    forecastBasis: (() => { const ms = jsons.industry.market_size || {}; return { marketSize: Number(ms.total_2026e_yi) || null,
-      aiSize: Number(ms.ai_drama_2026e_yi) || null, evidence: ms.evidence || [],
-      note: "2026E 市场规模为机构预测，不是本报告模型预测；宽窄口径不可相加" }; })() },
+      forecastBasis: (() => { const ms = jsons.industry.market_size || {}; return { marketSize: Number(ms.total_2026e_yi) || null,
+        aiSize: Number(ms.ai_drama_2026e_yi) || null, evidence: ms.evidence || [],
+        note: "2026E 市场规模为机构预测，不是本报告模型预测；宽窄口径不可相加" }; })()
+    };
+  })(),
   stock: { stance: clean(briefs.stock.stance || jsons.stock.sector_view), claims: claims("stock"), rating: jsons.stock.rating || briefs.stock.stance || "", target: jsons.stock.target_range || null,
     ratingTriggers: (jsons.stock.catalysts || []).length ? [] : (() => {
       const ss = (jsons.stock.valuation || {}).scenario_sensitivity || {};
