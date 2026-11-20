@@ -7261,6 +7261,7 @@ button.primary{background:#2563eb;border-color:#2563eb;color:#fff}
             (l.usage && l.usage.subagents ? ' · 子代理 ' + l.usage.subagents : '') + '</span>' +
           '<span style="flex:1"></span>' +
           (st === "running" ? '<button class="skbtn" data-loop-stop="' + esc(l.id) + '" style="padding:0 5px;font-size:9px">停止</button>' : '') +
+          (st !== "running" && st !== "done" ? '<button class="skbtn" data-loop-resume="' + esc(l.id) + '" style="padding:0 5px;font-size:9px">恢复</button>' : '') +
           (st !== "running" ? '<button class="skbtn" data-loop-replay="' + esc(l.id) + '" style="padding:0 5px;font-size:9px">重放</button>' : '') +
           '</div>' +
           (last ? '<div style="font-size:9px;color:#64748b;margin-top:2px">' + esc(last.type || "") + ' · ' + esc(String(last.detail || "").slice(0, 160)) + '</div>' : '') +
@@ -8534,6 +8535,14 @@ button.primary{background:#2563eb;border-color:#2563eb;color:#fff}
       fetch(API + "/api/agent/loop/stop", { method: "POST", headers: { "content-type": "application/json" },
         body: JSON.stringify({ case: CASE_ID, id: t.getAttribute("data-loop-stop"), by: "you" }) })
         .then(function (r) { return r.json(); }).then(function (j) { toast(j.error ? ("停止失败：" + j.error) : "已请求停止"); setTimeout(renderAgentLoops, 500); });
+      return;
+    }
+    if (t.closest("[data-loop-resume]")) {
+      fetch(API + "/api/agent/loop/resume", { method: "POST", headers: { "content-type": "application/json" },
+        body: JSON.stringify({ case: CASE_ID, id: t.getAttribute("data-loop-resume"), by: "you" }) })
+        .then(function (r) { return r.json(); })
+        .then(function (j) { toast(j.ok ? "已恢复 Lead 循环 " + j.loopId : ("恢复失败：" + (j.error || ""))); setTimeout(renderAgentLoops, 800); })
+        .catch(function (e) { toast("恢复失败：" + (e && e.message || e)); });
       return;
     }
     if (t.closest("[data-loop-replay]")) {

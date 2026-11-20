@@ -123,16 +123,24 @@ async function activeWork(caseId) {
   const maxWallMs = Math.max(1000, parseInt(arg("max-wall-ms", String(40 * 60 * 1000)), 10) || 40 * 60 * 1000);
   const fakeDecisionRaw = arg("fake-decision", "");
   const replayOf = arg("replay-of", "");
+  const resumeOf = arg("resume-of", "");
   const leaseId = arg("lease-id", "");
   const autonomy = String(arg("autonomy", (DESK_CFG.autonomy && DESK_CFG.autonomy.mode) || "supervised"));
   const started = Date.now();
   const id = arg("loop-id", "") || lib.loopId("lead");
   if (!caseId) { console.error("用法: lead-loop.js --case <c> [--objective ...] [--max-rounds 4] [--mode fake|real]"); process.exit(2); }
-  const state = { id, case: caseId, kind: "lead", agent: "lead", objective, mode, runtime: runtimeName, replayOf, autonomy,
-    status: "running", rounds: 0, maxRounds, trace: [], decision: null, actions: [],
-    budget: { maxRounds, maxTokens, maxWallMs },
-    usage: { tokens: 0, toolCalls: 0, wallMs: 0 },
-    createdAt: new Date().toISOString() };
+  let oldState = null;
+  try { if (resumeOf) oldState = lib.readState(resumeOf); } catch (e) {}
+  const resumeRound = oldState ? (Number(oldState.rounds) || 0) + 1 : 1;
+  const roundsLimit = oldState ? Math.min(12, Math.max(maxRounds, resumeRound)) : maxRounds;
+  const state = { id, pid: process.pid, case: caseId, kind: "lead", agent: "lead", objective, mode, runtime: runtimeName, replayOf, resumeOf, autonomy,
+    status: "running", rounds: oldState ? (Number(oldState.rounds) || 0) : 0, maxRounds: roundsLimit,
+    trace: oldState && Array.isArray(oldState.trace) ? oldState.trace : [], decision: null,
+    actions: oldState && Array.isArray(oldState.actions) ? oldState.actions : [],
+    budget: { maxRounds: roundsLimit, maxTokens, maxWallMs },
+    usage: oldState && oldState.usage ? Object.assign({ tokens: 0, toolCalls: 0, wallMs: 0 }, oldState.usage) : { tokens: 0, toolCalls: 0, wallMs: 0 },
+    resumedFrom: resumeOf || "", resumeCount: oldState ? (Number(oldState.resumeCount) || 0) + 1 : 0,
+    createdAt: (oldState && oldState.createdAt) || new Date().toISOString() };
   lib.writeState(state);
   let leaseTimer = null;
   if (leaseId) {
@@ -159,10 +167,10 @@ async function activeWork(caseId) {
       title: String(title || "").slice(0, 300), detail: String(detail || "").slice(0, 2000),
       blocking: blocking !== false }, { actor: "lead", case: caseId, traceId: id });
   }
-  await lib.emit("agent.loop.started", "lead", { case: caseId, loopId: id, kind: "lead", objective, mode, maxRounds, replayOf, autonomy });
+  await lib.emit("agent.loop.started", "lead", { case: caseId, loopId: id, kind: "lead", objective, mode, maxRounds: roundsLimit, replayOf, resumeOf, autonomy });
   let terminal = false;
   try {
-    for (let round = 1; round <= maxRounds; round++) {
+    for (let round = resumeRound; round <= roundsLimit; round++) {
       if (lib.stopRequested(id)) { state.status = "stopped"; lib.appendTrace(state, "stop", "收到停止请求"); break; }
       const cb = await lib.caseBudget(caseId);
       if (cb.exceeded) {
@@ -182,7 +190,7 @@ async function activeWork(caseId) {
         decision = { action: "finish", force: true, reason: "fake lead loop" };
         if (fakeDecisionRaw) { try { decision = JSON.parse(fakeDecisionRaw); } catch (e) {} }
       } else {
-        const prompt = decisionPrompt(caseId, objective, round, maxRounds, obs);
+        const prompt = decisionPrompt(caseId, objective, round, roundsLimit, obs);
         let r = await runtimeApi.run(runtimeName, "lead", caseId, prompt, id + "-r" + round);
         if (!r.ok) {
           lib.appendTrace(state, "model.retry", "Lead 模型调用失败，重试一次");

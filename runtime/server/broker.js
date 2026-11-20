@@ -2020,6 +2020,52 @@ const server = http.createServer(async (req, res) => {
       if (cur && cur.loopId === loopId) leadLeases.delete(caseId);
       return json(res, 200, { ok: true });
     }
+    if (p === "/api/agent/loop/resume" && req.method === "POST") {
+      const b = await readBody(req);
+      const caseId = String(b.case || "default").slice(0, 80);
+      const id = String(b.id || "").replace(/[^a-zA-Z0-9_-]/g, "").slice(0, 40);
+      if (!id) return json(res, 400, { error: "id required" });
+      let j = null;
+      try { j = JSON.parse(fs.readFileSync(path.join(ROOT, "runtime/agent-loops", id + ".json"), "utf8")); } catch (e) {}
+      if (!j) return json(res, 404, { error: "loop not found" });
+      if (j.kind !== "lead") return json(res, 400, { error: "only lead loop can resume" });
+      const stateAlive = j.status === "running" && j.pid && pidAlive(j.pid);
+      if (stateAlive) return json(res, 409, { error: "loop still running" });
+      if (j.status === "done") return json(res, 409, { error: "loop already done" });
+      const cur = leadLeases.get(caseId);
+      if (cur && Number(cur.until) > Date.now() && cur.pid && pidAlive(cur.pid))
+        return json(res, 409, { error: "Lead 循环已在运行", code: "lead_lease_held", loopId: cur.loopId });
+      if (cur && cur.pid && !pidAlive(cur.pid)) leadLeases.delete(caseId);
+      const loopId = "AL" + Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
+      const rounds = Number(j.rounds) || 0;
+      const maxRounds = Math.min(12, Math.max(Number(j.maxRounds) || 4, rounds + 2));
+      const maxTokens = Math.max(0, Number(j.budget && j.budget.maxTokens) || 160000);
+      const maxWallMs = Math.max(1000, Number(j.budget && j.budget.maxWallMs) || 40 * 60 * 1000);
+      const mode = j.mode === "real" ? "real" : "fake";
+      const runtime = ["fake", "dsh", "openai"].indexOf(j.runtime) >= 0 ? j.runtime : "dsh";
+      const args = [path.join(ROOT, "scripts/lead-loop.js"), "--case", caseId, "--mode", mode, "--runtime", runtime,
+        "--max-rounds", String(maxRounds), "--max-tokens", String(maxTokens), "--max-wall-ms", String(maxWallMs),
+        "--loop-id", loopId, "--resume-of", id, "--lease-id", loopId,
+        "--objective", String(j.objective || "继续完成 case 研究").slice(0, 4000)];
+      if (["workflow", "supervised", "autonomous"].indexOf(j.autonomy) >= 0) args.push("--autonomy", j.autonomy);
+      const dir = path.join(ROOT, "runtime/agent-loops"); fs.mkdirSync(dir, { recursive: true });
+      const fd = fs.openSync(path.join(dir, loopId + ".log"), "a");
+      leadLeases.set(caseId, { loopId, pid: 0, until: Date.now() + 120000 });
+      let childPid = 0;
+      try {
+        const cp = spawn(process.execPath, args, { cwd: ROOT, detached: true, stdio: ["ignore", fd, fd],
+          env: Object.assign({}, process.env, { DESK_BROKER: "http://127.0.0.1:" + PORT }) });
+        cp.unref(); childPid = cp.pid || 0;
+      } catch (e) {
+        try { fs.closeSync(fd); } catch (e2) {}
+        leadLeases.delete(caseId);
+        return json(res, 500, { error: String((e && e.message) || e) });
+      }
+      try { fs.closeSync(fd); } catch (e) {}
+      const lease = leadLeases.get(caseId); if (lease && lease.loopId === loopId) { lease.pid = childPid; leadLeases.set(caseId, lease); }
+      emit("agent.loop.resumed", b.by || "you", { case: caseId, loopId, resumeOf: id, kind: "lead", mode, runtime, maxRounds });
+      return json(res, 200, { ok: true, loopId, resumeOf: id, kind: "lead", mode, runtime, maxRounds });
+    }
     if (p === "/api/agent/loop/replay" && req.method === "POST") {
       const b = await readBody(req);
       const caseId = String(b.case || "default").slice(0, 80);
