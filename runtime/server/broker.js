@@ -47,6 +47,7 @@ const dataTask = require(path.join(CODE_ROOT, "scripts/datatask.js"));
 const toolGateway = require(path.join(CODE_ROOT, "scripts/tool-gateway.js"));
 const caseIntent = require(path.join(CODE_ROOT, "scripts/case-intent.js"));
 const caseView = require(path.join(CODE_ROOT, "runtime/domain/case-view.js"));
+const { FINAL_REPORT, LEGACY_FINAL_REPORT } = require(path.join(CODE_ROOT, "runtime/contracts.js"));
 const ALIAS_FILE = path.join(ROOT, "runtime/metric-aliases.json");
 function loadAliasProposals() {
   try { return JSON.parse(fs.readFileSync(ALIAS_FILE, "utf8")); } catch (e) { return []; }
@@ -5976,7 +5977,7 @@ function ensureFinalReview(caseId, service, rel, version, requester) {
         if (sp && sp.label) docTitle = sp.label + "行业研究报告";
       } catch (e) {}
       const dx = await runPython([path.join(ROOT, "scripts/md_to_docx.py"), "--md", cleanMd,
-        "--out", "reports/final-report.docx", "--case", caseId, "--title", docTitle, "--investor", "--no-disclaimer", "--evidence-appendix"], env, 120000);
+        "--out", FINAL_REPORT, "--case", caseId, "--title", docTitle, "--investor", "--no-disclaimer", "--evidence-appendix"], env, 120000);
       let dj = null; try { dj = JSON.parse(String(dx.stdout || "").trim().split("\n").pop()); } catch (e) {}
       if (!dj || !dj.ok) return json(res, 500, { error: "Word 生成失败：" + String((dj && dj.error) || dx.stderr || "").slice(0, 300) });
       // 报告版本以 manifest 为唯一来源；重启/重生成不回退。
@@ -5984,8 +5985,8 @@ function ensureFinalReview(caseId, service, rel, version, requester) {
       try { prevVersion = Number(JSON.parse(fs.readFileSync(vaultPath(caseId, "reports/final-manifest.json"), "utf8")).version || 0); } catch (e) {}
       const reportVersion = prevVersion + 1;
       // 最终报告签发前自动创建审计/法务复核请求。
-      try { ensureFinalReview(caseId, "audit", "reports/final-report.docx", reportVersion, "system"); } catch (e) {}
-      try { ensureFinalReview(caseId, "legal", "reports/final-report.docx", reportVersion, "system"); } catch (e) {}
+      try { ensureFinalReview(caseId, "audit", FINAL_REPORT, reportVersion, "system"); } catch (e) {}
+      try { ensureFinalReview(caseId, "legal", FINAL_REPORT, reportVersion, "system"); } catch (e) {}
       const sourceVersions = {};
       ["research/macro.md", "research/industry.md", "research/stock.md", "evidence/sources.jsonl"].forEach(rel => {
         const f = S.files.get(caseId + "::" + rel);
@@ -5993,7 +5994,7 @@ function ensureFinalReview(caseId, service, rel, version, requester) {
       });
       const figRun = await runNode([path.join(ROOT, "scripts/figure-audit.js"), "--case", caseId], env, 30000);
       let figj = null; try { figj = JSON.parse(String(figRun.out || "").trim().split("\n").pop()); } catch (e) {}
-      const inputFiles = ["research/claims.json", "research/investment-model.json", "research/valuation.json", "research/report-structure.json", "research/catalysts.json", "research/figures.json", "reports/investor-final.md", "reports/final-report.docx"];
+      const inputFiles = ["research/claims.json", "research/investment-model.json", "research/valuation.json", "research/report-structure.json", "research/catalysts.json", "research/figures.json", "reports/investor-final.md", FINAL_REPORT];
       const inputs = {};
       inputFiles.forEach(rel => {
         try { const abs = vaultPath(caseId, rel); if (fs.existsSync(abs)) inputs[rel] = { sha: sha256(fs.readFileSync(abs)), bytes: fs.statSync(abs).size }; } catch (e) {}
@@ -6015,7 +6016,7 @@ function ensureFinalReview(caseId, service, rel, version, requester) {
         crossReview: review ? { high: review.high || 0, issues: (review.issues || []).length } : null,
         crossReviewWaiver: crossWaiverUsed ? { by: crossWaiverUsed.by || "", at: crossWaiverUsed.at || "",
           reason: crossWaiverUsed.reason || "", high: crossWaiverUsed.high || 0 } : null,
-        reviews: (() => { const list = (reviews.get(caseId) || []).filter(r => r.path === "reports/final-report.docx" && (r.service === "audit" || r.service === "legal")); return list.map(r => ({ id: r.id, service: r.service, version: r.version, status: r.status })); })(),
+        reviews: (() => { const list = (reviews.get(caseId) || []).filter(r => r.path === FINAL_REPORT && (r.service === "audit" || r.service === "legal")); return list.map(r => ({ id: r.id, service: r.service, version: r.version, status: r.status })); })(),
         tone: tone ? { removedLabels: tone.removedLabels, semicolons: tone.semicolons } : null,
         dataFreshness: fresh, dataAsOf: fresh.items.length ? fresh.items.map(x => x.dataAsOf).sort().pop() : null };
       try { fs.writeFileSync(vaultPath(caseId, "reports/final-manifest.json"), JSON.stringify(manifest, null, 2)); } catch (e) {}
@@ -6128,7 +6129,7 @@ function ensureFinalReview(caseId, service, rel, version, requester) {
     }
     if (p === "/api/completions" && req.method === "GET") {
       const caseId = u.searchParams.get("case") || "default";
-      if (fs.existsSync(vaultPath(caseId, "reports/final-report.docx"))) {
+      if (fs.existsSync(vaultPath(caseId, FINAL_REPORT))) {
         return json(res, 200, { completion: null, completions: [] });
       }
       const prune = c => {
@@ -6304,7 +6305,7 @@ function ensureFinalReview(caseId, service, rel, version, requester) {
     }
     if (p === "/api/case/view" && req.method === "GET") {
       const caseId = u.searchParams.get("case") || "default";
-      const finalExists = fs.existsSync(vaultPath(caseId, "reports/final-report.docx"));
+      const finalExists = fs.existsSync(vaultPath(caseId, FINAL_REPORT));
       let consistency = null;
       try { consistency = reportConsistency(caseId); } catch (e) {}
       let crossReview = null;
@@ -6409,11 +6410,11 @@ function ensureFinalReview(caseId, service, rel, version, requester) {
           detail: (() => { const r = readJson(path.join(baseR, "readability.json")); return r ? (r.ok ? (r.chars + " 字 · 图 " + r.figures) : ("问题 " + (r.bad || []).length)) : "未运行"; })() },
         { id: "tone", label: "去 AI 味", status: manifest && manifest.tone ? "done" : "pending",
           detail: manifest && manifest.tone ? ("标签 " + (manifest.tone.removedLabels || 0) + " · 分号 " + (manifest.tone.semicolons || 0)) : "未运行" },
-        { id: "docx", label: "Word 生成", status: exists(path.join(baseP, "final-report.docx")) ? "done" : "pending", detail: "reports/final-report.docx" },
-        { id: "audit", label: "审计复核", status: (() => { const list = (reviews.get(caseId) || []).filter(r => r.service === "audit" && r.path === "reports/final-report.docx"); const r = list.sort((a,b)=>String(b.createdAt).localeCompare(String(a.createdAt)))[0]; return r ? (r.status === "clean" || r.status === "waived" ? "done" : (r.status === "returned" || r.status === "conditional" ? "failed" : "running")) : "pending"; })(),
-          detail: (() => { const list = (reviews.get(caseId) || []).filter(r => r.service === "audit" && r.path === "reports/final-report.docx"); const r = list.sort((a,b)=>String(b.createdAt).localeCompare(String(a.createdAt)))[0]; return r ? r.status : "未请求"; })() },
-        { id: "legal", label: "法务复核", status: (() => { const list = (reviews.get(caseId) || []).filter(r => r.service === "legal" && r.path === "reports/final-report.docx"); const r = list.sort((a,b)=>String(b.createdAt).localeCompare(String(a.createdAt)))[0]; return r ? (r.status === "clean" || r.status === "waived" ? "done" : (r.status === "returned" || r.status === "conditional" ? "failed" : "running")) : "pending"; })(),
-          detail: (() => { const list = (reviews.get(caseId) || []).filter(r => r.service === "legal" && r.path === "reports/final-report.docx"); const r = list.sort((a,b)=>String(b.createdAt).localeCompare(String(a.createdAt)))[0]; return r ? r.status : "未请求"; })() },
+        { id: "docx", label: "Word 生成", status: exists(path.join(baseP, "final-report.docx")) ? "done" : "pending", detail: FINAL_REPORT },
+        { id: "audit", label: "审计复核", status: (() => { const list = (reviews.get(caseId) || []).filter(r => r.service === "audit" && r.path === FINAL_REPORT); const r = list.sort((a,b)=>String(b.createdAt).localeCompare(String(a.createdAt)))[0]; return r ? (r.status === "clean" || r.status === "waived" ? "done" : (r.status === "returned" || r.status === "conditional" ? "failed" : "running")) : "pending"; })(),
+          detail: (() => { const list = (reviews.get(caseId) || []).filter(r => r.service === "audit" && r.path === FINAL_REPORT); const r = list.sort((a,b)=>String(b.createdAt).localeCompare(String(a.createdAt)))[0]; return r ? r.status : "未请求"; })() },
+        { id: "legal", label: "法务复核", status: (() => { const list = (reviews.get(caseId) || []).filter(r => r.service === "legal" && r.path === FINAL_REPORT); const r = list.sort((a,b)=>String(b.createdAt).localeCompare(String(a.createdAt)))[0]; return r ? (r.status === "clean" || r.status === "waived" ? "done" : (r.status === "returned" || r.status === "conditional" ? "failed" : "running")) : "pending"; })(),
+          detail: (() => { const list = (reviews.get(caseId) || []).filter(r => r.service === "legal" && r.path === FINAL_REPORT); const r = list.sort((a,b)=>String(b.createdAt).localeCompare(String(a.createdAt)))[0]; return r ? r.status : "未请求"; })() },
         { id: "synthesis", label: "跨报告综合", status: synth ? synth.status : "pending",
           detail: synth ? (synth.error ? String(synth.error).slice(0, 80) : (synth.status === "done" ? "已综合" : "后台运行中")) : "后台任务未启动" }
       ];
@@ -6638,12 +6639,12 @@ function ensureFinalReview(caseId, service, rel, version, requester) {
           }));
         }
       }
-      const finalExists = fs.existsSync(vaultPath(caseId, "reports/final-report.docx"));
+      const finalExists = fs.existsSync(vaultPath(caseId, FINAL_REPORT));
       let signed = false;
       try {
-        const abs = vaultPath(caseId, "reports/final-report.docx");
+        const abs = vaultPath(caseId, FINAL_REPORT);
         const sha = sha256(fs.readFileSync(abs));
-        const sig = (reportSignatures.get(caseId) || {})["reports/final-report.docx"];
+        const sig = (reportSignatures.get(caseId) || {})[FINAL_REPORT];
         let mv = 1; try { mv = JSON.parse(fs.readFileSync(vaultPath(caseId, "reports/final-manifest.json"), "utf8")).version || 1; } catch (e) {}
         signed = !!(sig && (!sig.sha || sig.sha === sha) && (sig.version || 1) === mv);
       } catch (e) {}
@@ -6748,8 +6749,8 @@ function reportConsistency(caseId) {
   });
   let signed = false;
   try {
-    const sha = sha256(fs.readFileSync(vaultPath(caseId, "reports/final-report.docx")));
-    const sig = (reportSignatures.get(caseId) || {})["reports/final-report.docx"];
+    const sha = sha256(fs.readFileSync(vaultPath(caseId, FINAL_REPORT)));
+    const sig = (reportSignatures.get(caseId) || {})[FINAL_REPORT];
     signed = !!(sig && (!sig.sha || sig.sha === sha) && (sig.version || 1) === (m.version || 1));
   } catch (e) {}
   return { ok: mismatches.length === 0, stale: mismatches.length > 0, reportVersion: m.version || 0, signed, mismatches };
@@ -6770,10 +6771,10 @@ function reportConsistency(caseId) {
       const rd = rj("research/readability.json");
       const fg = rj("research/figures.json");
       const list = reviews.get(caseId) || [];
-      const latest = svc => list.filter(r => r.service === svc && r.path === "reports/final-report.docx").sort((a,b)=>String(b.createdAt).localeCompare(String(a.createdAt)))[0];
+      const latest = svc => list.filter(r => r.service === svc && r.path === FINAL_REPORT).sort((a,b)=>String(b.createdAt).localeCompare(String(a.createdAt)))[0];
       const audit = latest("audit"), legal = latest("legal");
       const checks = [
-        { id: "report", label: "最终报告存在", ok: fs.existsSync(vaultPath(caseId, "reports/final-report.docx")), detail: "reports/final-report.docx" },
+        { id: "report", label: "最终报告存在", ok: fs.existsSync(vaultPath(caseId, FINAL_REPORT)), detail: FINAL_REPORT },
         { id: "evidence", label: "证据引用校验", ok: !!(vj && vj.high === 0), detail: vj ? ("high " + (vj.high || 0) + " · evidence " + (vj.evidence || 0)) : "未运行" },
         { id: "claims", label: "投资论点映射", ok: !!(cv && cv.ok), detail: cv ? ((cv.claims || 0) + " 条 · high " + (cv.high || 0)) : "未运行" },
         { id: "readability", label: "投资者可读性", ok: !!(rd && rd.ok), detail: rd ? ((rd.chars || 0) + " 字 · 图 " + (rd.figures || 0) + (rd.bad && rd.bad.length ? " · " + rd.bad.join("、") : "")) : "未运行" },
@@ -6834,7 +6835,7 @@ function reportConsistency(caseId) {
     if (p === "/api/report/verify" && req.method === "GET") {
       const caseId = u.searchParams.get("case") || "default";
       const r = await runNode([path.join(ROOT, "scripts/verify-report.js"), "--case", caseId,
-        "--path", u.searchParams.get("path") || "reports/final-report.docx"], process.env, 30000);
+        "--path", u.searchParams.get("path") || FINAL_REPORT], process.env, 30000);
       let j = null; try { j = JSON.parse(String(r.out || "").trim()); } catch (e) {}
       return json(res, j && j.ok ? 200 : 409, j || { error: "verify failed", stderr: String(r.err || "").slice(0, 300) });
     }
@@ -7325,7 +7326,7 @@ function syncFinalManifestReviews(caseId) {
   try {
     const p0 = vaultPath(caseId, "reports/final-manifest.json");
     const m = JSON.parse(fs.readFileSync(p0, "utf8"));
-    m.reviews = (reviews.get(caseId) || []).filter(r => r.path === "reports/final-report.docx" && (r.service === "audit" || r.service === "legal"))
+    m.reviews = (reviews.get(caseId) || []).filter(r => r.path === FINAL_REPORT && (r.service === "audit" || r.service === "legal"))
       .map(r => ({ id: r.id, service: r.service, version: r.version, status: r.status, result: r.result || "", note: r.note || "" }));
     fs.writeFileSync(p0, JSON.stringify(m, null, 2));
   } catch (e) {}
@@ -7370,7 +7371,7 @@ function syncFinalManifestReviews(caseId) {
       let j = null; try { j = JSON.parse(String(r.out || "").trim().split(String.fromCharCode(10)).pop()); } catch (e) {}
       if (j && j.ok) {
         const svc = String(b.service || "audit");
-        const rv = (reviews.get(caseId) || []).filter(x => x.service === svc && x.path === "reports/final-report.docx").sort((a, b) => String(b.createdAt || "").localeCompare(String(a.createdAt || "")))[0];
+        const rv = (reviews.get(caseId) || []).filter(x => x.service === svc && x.path === FINAL_REPORT).sort((a, b) => String(b.createdAt || "").localeCompare(String(a.createdAt || "")))[0];
         if (rv) { rv.findings = (rv.findings || []).concat((j.findings || []).map(f => ({ level: f.level || "warn", text: f.text || "" }))); rv.note = (rv.note || "") + "；独立意见已生成"; }
       }
       return json(res, 200, j || { ok: false, findings: [] });
@@ -7424,7 +7425,7 @@ function syncFinalManifestReviews(caseId) {
     if (p === "/api/sign" && req.method === "POST") {
       const b = await readBody(req);
       const caseId = b.case || "default";
-      const rel = safeRel(b.path || "final_report.md");
+      const rel = safeRel(b.path || FINAL_REPORT);
       if (!rel) return json(res, 400, { error: "bad path" });
       const f = fileOf(caseId, rel);
       if (!(f.version > 0)) return json(res, 409, { error: "还没有终稿，不能签发" });
@@ -9042,7 +9043,7 @@ function watchdogPass() {
           completionSeen.add(completionKey);
           emit("plan.completed", "system", { case: caseId, planId: p.id, agent: p.agent });
           try {
-            if (fs.existsSync(vaultPath(caseId, "reports/final-report.docx"))) return;
+            if (fs.existsSync(vaultPath(caseId, FINAL_REPORT))) return;
             const planner = path.join(ROOT, "scripts/planner.js");
             const child = spawn(process.execPath, [planner, "--case", caseId, "--agent", p.agent,
               "--completion-options", p.id], { cwd: ROOT, detached: true, stdio: "ignore",

@@ -1190,6 +1190,14 @@ button.primary{background:#2563eb;border-color:#2563eb;color:#fff}
   var PROTO = /[?&]proto=1/.test(SEARCH);
   var LIVE = SERVED ? !PROTO : /[?&]live=1/.test(SEARCH);
   var API = SERVED ? "" : "http://127.0.0.1:7801";
+  // 报告 artifact 契约：live 只认 reports/final-report.docx；final_report.md 仅作旧 case 迁移 fallback。
+  var FINAL_REPORT = "reports/final-report.docx";
+  var LEGACY_FINAL_REPORT = "final_report.md";
+  function finalReportRel() {
+    if (typeof S !== "undefined" && S && S.files && S.files[FINAL_REPORT]) return FINAL_REPORT;
+    if (typeof S !== "undefined" && S && S.files && S.files[LEGACY_FINAL_REPORT]) return LEGACY_FINAL_REPORT;
+    return FINAL_REPORT;
+  }
   var CASE_ID = (function () {
     var q = typeof location !== "undefined" ? (location.search || "") : "";
     var m = /[?&]case=([^&]+)/.exec(q);
@@ -1266,7 +1274,7 @@ button.primary{background:#2563eb;border-color:#2563eb;color:#fff}
       skills: liveSkills || { catalog: [], byAgent: {}, loaded: [], requests: [] },
       tasks: {}, threads: { macro: [], industry: [], stock: [], audit: [], legal: [], trader: [], lead: [] },
       unread: {}, reports: [],
-      models: liveModels || { default: { provider: "opencode-go", model: "deepseek-v4.1-flash" },
+      models: liveModels || { default: { provider: "", model: "未配置" },
         byAgent: {}, catalog: [] } };
   }
   function buildLiveState(snap, events) {
@@ -1454,12 +1462,12 @@ button.primary{background:#2563eb;border-color:#2563eb;color:#fff}
     // 阶段进度：按 vault 里已存在的交付物反推（全部来自账本里的 file.written，不是写死的）
     var STAGE_FILES = [["S1", ["research/macro.md"]], ["S2", ["research/industry.md"]],
       ["S3", ["research/stock.md"]], ["S4", ["review/audit.json", "review/legal.json"]],
-      ["S5", ["trade/plan.json"]], ["S6", ["final_report.md"]]];
+      ["S5", ["trade/plan.json"]], ["S6", [FINAL_REPORT]]];
     S2.mission.doneStages = STAGE_FILES.filter(function (st) {
       return st[1].every(function (p) { return S2.files[p] && S2.files[p].version > 0; });
     }).map(function (st) { return st[0]; });
     S2.mission.stage = "";
-    var sign = (snap.gates || {})["G-SIGN::final_report.md"];
+    var sign = (snap.gates || {})["G-SIGN::" + FINAL_REPORT];
     S2.mission.signoff = sign && sign.status === "pass" ? "signed"
       : (sign ? "awaiting" : "pending");
 
@@ -1643,12 +1651,6 @@ button.primary{background:#2563eb;border-color:#2563eb;color:#fff}
       var sm = $("setMask"); if (sm && sm.style.display !== "none") renderSettings();
     }).catch(function () {});
   }
-  var MODEL_OPTS = [
-    { p: "opencode-go", m: "deepseek-v4.1-flash", tag: "默认 · 快" },
-    { p: "opencode-go", m: "deepseek-v4.1", tag: "强推理" },
-    { p: "opencode-go", m: "deepseek-v3.2", tag: "上一代" },
-    { p: "deepseek", m: "deepseek-v4.1-flash", tag: "直连" }
-  ];
   var $ = function (id) { return document.getElementById(id); };
   function esc(s) { return String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;"); }
   function skillCountOf(id) {
@@ -3954,7 +3956,7 @@ button.primary{background:#2563eb;border-color:#2563eb;color:#fff}
     h += '</div>';
     h += '<div class="case-card next"><div class="top"><span class="dot idle"></span>case-2026-002' +
       '<span class="ctype ind">行业</span><span class="prog">待启动</span></div>' +
-      '<div class="tk">半导体设备 · 行业研究（4 段）</div>' +
+      '<div class="tk">示例行业 · 行业研究（4 段）</div>' +
       '<div class="croles">' +
       '<span class="cr">宏观</span><span class="cr">行业</span><span class="cr">审计</span><span class="cr">法律</span>' +
       '<span class="cr off">个股</span><span class="cr off">交易</span>' +
@@ -4241,8 +4243,8 @@ button.primary{background:#2563eb;border-color:#2563eb;color:#fff}
       else if (it.k === 1) {
         if (it.e.type === "sign.pending") {
           h += '<div class="signbox"><div class="st1">◉ ' + esc(it.e.label) + '</div>' +
-            '<div class="st2">final_report.md v1 已汇编：6 章 + 证据附录。审计 94% / 法律 无 BLOCK，' +
-            '三道机器门禁全部通过。发布权在你手上。</div>' +
+            '<div class="st2">' + esc(FINAL_REPORT) + ' v1 已汇编：6 章 + 证据附录。审计/法律复核通过，' +
+            '机器门禁通过。发布权在你手上。</div>' +
             '<div class="act"><button class="primary" onclick="__sign()">签发并发布</button>' +
             '<button>退回修改</button><button>导出 PDF</button></div></div>';
         } else h += sysHTML(it.e);
@@ -5227,7 +5229,7 @@ button.primary{background:#2563eb;border-color:#2563eb;color:#fff}
       if (ln.id === "lead") {
         // 工作流模式：Lead 的汇编/签发用顶部状态条表达，不占列；交付物模式保留 Lead 列（终稿在这里）
         if (isWF) return false;
-        return !!(S.files && S.files["final_report.md"] && S.files["final_report.md"].version > 0);
+        return !!(S.files && ((S.files[FINAL_REPORT] && S.files[FINAL_REPORT].version > 0) || (S.files[LEGACY_FINAL_REPORT] && S.files[LEGACY_FINAL_REPORT].version > 0)));
       }
       if (!assigned[ln.id]) return false;
       if (ln.id === "trader") {
@@ -5330,7 +5332,7 @@ button.primary{background:#2563eb;border-color:#2563eb;color:#fff}
     h += '</div>';
     // Lead 不占列：把「汇编 / 签发」状态放顶部状态条
     var finEv = null;
-    (S.events || []).forEach(function (e) { if (e.kind === "commit" && e.path === "final_report.md") finEv = e; });
+    (S.events || []).forEach(function (e) { if (e.kind === "commit" && (e.path === FINAL_REPORT || e.path === LEGACY_FINAL_REPORT)) finEv = e; });
     var cy2 = S.cycle || {};
     var signTxt = cy2.status === "signed" ? "已签发" : cy2.status === "awaiting_review" ? "待签发"
       : (cy2.status === "blocked" || cy2.status === "failed") ? "被阻塞"
@@ -5340,7 +5342,7 @@ button.primary{background:#2563eb;border-color:#2563eb;color:#fff}
     h += '<div class="gstatus"><span class="gs-dot" style="background:' + signCol + '"></span>' +
       '<span>汇编 / 签发：<b style="color:' + signCol + '">' + signTxt + '</b>' +
       (finEv ? ' · 终稿 v' + finEv.v : ' · 终稿未汇编') + '</span>' +
-      (finEv ? '<a class="gs-link" data-node-file="final_report.md">查看终稿</a>' : '') +
+      (finEv ? '<a class="gs-link" data-node-file="' + esc(finalReportRel()) + '">查看终稿</a>' : '') +
       '<span class="gspacer"></span>' +
       (function () {
         var distinct = {};
@@ -5790,12 +5792,16 @@ button.primary{background:#2563eb;border-color:#2563eb;color:#fff}
         var old = $("nextStepBanner"); if (old) old.style.display = "none";
         var act = v.primaryAction || {};
         var q = v.quality || {};
-        var high = (v.blocking || [])[0] || {};
-        var match = (v.blocking || []).filter(function (x) { return x.action === act.id; })[0];
-        var reason = (match && match.title) || high.title || (act.label || "等待系统");
+        var inbox = v.inbox || [];
+        var high = (v.blocking || [])[0] || inbox[0] || {};
+        var match = (v.blocking || []).filter(function (x) { return x.action === act.id; })[0] ||
+          inbox.filter(function (x) { return x.action === act.id; })[0];
+        var todoCount = inbox.filter(function (x) { return x.severity !== "info"; }).length;
+        var reason = (match && match.title) || high.title ||
+          (v.phase === "SIGNED" ? "报告已签发，可校验或归档" : (v.phase === "VERIFIED" ? "报告已校验" : (act.label || "等待系统")));
         var h = '<div style="display:flex;align-items:center;gap:6px;width:100%">' +
           '<b style="font-size:11px">' + esc(v.stageLabel || v.phaseLabel || v.phase || "") + '</b>' +
-          ((v.blocking || []).length ? '<span style="font-size:9px;color:#b45309">阻塞 ' + v.blocking.length + '</span>' : '<span style="font-size:9px;color:#64748b">正常</span>') +
+          (todoCount ? '<span style="font-size:9px;color:#b45309">待处理 ' + todoCount + '</span>' : '<span style="font-size:9px;color:#64748b">正常</span>') +
           '<span style="flex:1"></span></div>' +
           '<div style="font-size:9.5px;color:#475569;line-height:1.45;margin-top:3px;width:100%">' + esc(String(reason).slice(0, 64)) + '</div>' +
           '<div style="display:flex;align-items:center;gap:5px;margin-top:5px;width:100%">' +
@@ -6043,7 +6049,7 @@ button.primary{background:#2563eb;border-color:#2563eb;color:#fff}
     var el = $("rightDeliverables"); if (!el) return;
     var files = Object.values(S.files || {}).filter(function (f) {
       var p = String(f.path || "");
-      return /^(reports\/|research\/|figures\/|trade\/)/.test(p) || p === "final_report.md";
+      return /^(reports\/|research\/|figures\/|trade\/)/.test(p) || p === LEGACY_FINAL_REPORT;
     });
     files.sort(function (a, b) { return String(a.path).localeCompare(String(b.path)); });
     var h = "";
@@ -6725,7 +6731,7 @@ button.primary{background:#2563eb;border-color:#2563eb;color:#fff}
   window.__sign = function () {
     if (LIVE) {
       fetch(API + "/api/sign", { method: "POST", headers: { "content-type": "application/json" },
-        body: JSON.stringify({ case: CASE_ID, path: "final_report.md", by: "you" }) })
+        body: JSON.stringify({ case: CASE_ID, path: FINAL_REPORT, by: "you" }) })
         .then(function (r) { return r.json(); })
         .then(function (j) {
           if (j.error) {
@@ -6735,13 +6741,13 @@ button.primary{background:#2563eb;border-color:#2563eb;color:#fff}
             if (bad.length) console.log("G-REPORT checks:", j.checks);
             return;
           }
-          toast("✓ 已签发 final_report.md v" + j.version);
+          toast("✓ 已签发 " + FINAL_REPORT + " v" + j.version);
           livePoll();
         })
         .catch(function (e) { toast("签发失败：" + (e && e.message || e)); });
       return;
     }
-    if (sim.sign()) { toast("✓ 已签发并发布 final_report.md"); render(); }
+    if (sim.sign()) { toast("✓ 已签发并发布 " + FINAL_REPORT); render(); }
     else toast("还不能签发：报告尚未汇编完成");
   };
   // ---- 文件预览（自己写个小 markdown 渲染，不引外部库） ----
@@ -7803,7 +7809,7 @@ button.primary{background:#2563eb;border-color:#2563eb;color:#fff}
       $("deliveryMask").style.display = "none";
       if (dc === "macro") { chooseCompletion("macro-report"); assembleMacroReport(); return; }
       if (dc === "industry") {
-        var ind = prompt("行业名称（如：光伏 / AI短剧）", "");
+        var ind = prompt("行业名称（如：银行 / 光伏）", "");
         if (ind === null || !ind.trim()) return;
         fetch(API + "/api/intent", { method: "POST", headers: { "content-type": "application/json" },
           body: JSON.stringify({ case: CASE_ID, agent: "industry", text: "研究行业：" + ind.trim() }) })
@@ -7979,7 +7985,7 @@ button.primary{background:#2563eb;border-color:#2563eb;color:#fff}
         var inferred = hm ? hm[1].replace(/^(一下|本轮|这个)/, "") : "";
         if (act === "industry" && /^AI/i.test(inferred)) inferred = inferred;
         var tgt = cpayload.industry || cpayload.stock || cpayload.target || inferred ||
-          prompt(act === "industry" ? "行业名称（如：光伏 / 半导体）" : "个股代码或名称（如：002428 云南锗业）", "");
+          prompt(act === "industry" ? "行业名称（如：银行 / 光伏）" : "个股代码或名称（如：600036 / 某公司）", "");
         if (tgt === null || !tgt.trim()) return;
         fetch(API + "/api/intent", { method: "POST", headers: { "content-type": "application/json" },
           body: JSON.stringify({ case: CASE_ID, agent: act, text: (act === "industry" ? "研究行业：" : "研究个股：") + tgt.trim() }) })
@@ -8938,7 +8944,7 @@ button.primary{background:#2563eb;border-color:#2563eb;color:#fff}
     if (nc) {
       var id = prompt("新 case 名称（可留空，自动生成）", "");
       if (id === null) return;
-      var text = prompt("用一句话说明研究目标与标的（例：评估招商银行的投资价值 / AI短剧行业 2026 机会 / 沪深300ETF 配置）", "");
+      var text = prompt("用一句话说明研究目标与标的（例：评估某公司的投资价值 / 某行业 2026 机会 / 沪深300ETF 配置）", "");
       if (!text || !String(text).trim()) return;
       fetch(API + "/api/case/intent", { method: "POST", headers: { "content-type": "application/json" },
         body: JSON.stringify({ text: String(text).trim() }) })
@@ -8976,9 +8982,7 @@ button.primary{background:#2563eb;border-color:#2563eb;color:#fff}
     if (cyBtn) {
       var act = cyBtn.getAttribute("data-cycle");
       if (act === "preview") {
-        var relFinal = (S.files && S.files["reports/final-report.docx"]) ? "reports/final-report.docx" :
-          ((S.files && S.files["final_report.md"]) ? "final_report.md" : "reports/final-report.docx");
-        openFile(relFinal); return;
+        openFile(finalReportRel()); return;
       }
       if (act === "retry-stage") {
         fetch(API + "/api/cycle/retry", { method: "POST", headers: { "content-type": "application/json" },
@@ -9033,7 +9037,7 @@ button.primary{background:#2563eb;border-color:#2563eb;color:#fff}
       if (entry) {
         if (LIVE) {
           if (entry.verified === false) {
-            toast(entry.model + " 运行时还没接入（实测只有 deepseek-v4.1-flash 能起），选了会启动失败");
+            toast(entry.model + " 尚未实测通过，请先在模型配置中验证后再使用");
             return;
           }
           fetch(API + "/api/model", { method: "POST", headers: { "content-type": "application/json" },
