@@ -7,6 +7,7 @@
  */
 const fs = require("fs");
 const path = require("path");
+const crypto = require("crypto");
 const ROOT = path.resolve(__dirname, "../..");
 
 function readJson(file) {
@@ -290,10 +291,26 @@ function knowledgeView(caseId, root) {
   const entries = ev.items.map(x => {
     const r = byId[x.id] || {};
     const verified = x.status === "verified";
+    const ur = (() => {
+      for (const s of [r.raw, r.url]) {
+        const m = String(s || "").match(/uploads\/[^；;（(]+?\.(pdf|xlsx|xls|csv|md|txt|json)/i);
+        if (m) return m[0].replace(/^.*?(uploads\/)/, "uploads/");
+      }
+      return "";
+    })();
+    let sha = String(r.sha256 || "");
+    let hashComputed = false;
+    if (!sha && ur) {
+      const cands = [path.join(dir, ur)];
+      if (r.raw) cands.push(path.isAbsolute(r.raw) ? r.raw : path.join(ROOT, r.raw));
+      for (const fp of cands) {
+        try { if (fs.existsSync(fp)) { sha = crypto.createHash("sha256").update(fs.readFileSync(fp)).digest("hex"); hashComputed = true; break; } } catch (e) {}
+      }
+    }
     return { id: x.id, type: "evidence", title: x.field || "", value: String(r.value || "").slice(0, 500),
       source: evidenceSourceLabel(r), sourceUrl: r.url || "", sourceRaw: r.raw ? path.basename(r.raw) : "",
-      sourceType: evidenceSourceType(r), fileName: String(r.url || "").startsWith("uploads/") ? path.basename(r.url) : (r.raw ? path.basename(r.raw) : ""),
-      sha256: String(r.sha256 || ""), sourceTier: r.source_tier || "", dataAsOf: r.fetched_at || "", status: x.status,
+      sourceType: ur ? "file" : evidenceSourceType(r), fileName: ur ? path.basename(ur) : (String(r.url || "").startsWith("uploads/") ? path.basename(r.url) : (r.raw ? path.basename(r.raw) : "")),
+      sha256: sha, hashComputed, sourceTier: r.source_tier || "", dataAsOf: r.fetched_at || "", status: x.status,
       scope: "case_only", sensitivity: "internal", license: "existing_source",
       allowedUses: verified ? ["analysis", "report_citation"] : ["analysis"],
       evidenceIds: [x.id] };

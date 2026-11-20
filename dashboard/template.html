@@ -5766,7 +5766,7 @@ button.primary{background:#2563eb;border-color:#2563eb;color:#fff}
     var typeLabel = { file: "文件", url: "网页", connector: "连接器", derived: "衍生", other: "来源" }[x.sourceType] || "来源";
     var locator = x.sourceType === "file" ? (x.fileName || x.sourceRaw || x.sourceUrl || "") :
       (x.sourceType === "url" ? (x.sourceUrl || "") : (x.sourceRaw || x.sourceUrl || ""));
-    var hash = x.sha256 ? ("sha " + String(x.sha256).slice(0, 10)) :
+    var hash = x.sha256 ? ("sha " + String(x.sha256).slice(0, 10) + (x.hashComputed ? "（现算）" : "")) :
       (x.sourceType === "file" ? "sha256 未记录" : "");
     return esc(x.sourceLabel || "未标注来源") + " · " + typeLabel +
       (locator ? " · " + esc(locator) : "") +
@@ -8175,7 +8175,7 @@ button.primary{background:#2563eb;border-color:#2563eb;color:#fff}
           '<div style="font-size:9.5px;color:#94a3b8;word-break:break-all">source: ' + esc(x.source || "") +
             (x.sourceType ? ' · ' + esc({ file: "文件", url: "网页", connector: "连接器", derived: "衍生" }[x.sourceType] || x.sourceType) : '') +
             (x.fileName ? ' · ' + esc(x.fileName) : '') +
-            (x.sha256 ? ' · sha ' + esc(String(x.sha256).slice(0, 10)) : (x.sourceType === "file" ? ' · sha256 未记录' : '')) + '</div>');
+            (x.sha256 ? ' · sha ' + esc(String(x.sha256).slice(0, 10)) + (x.hashComputed ? '（现算）' : '') : (x.sourceType === "file" ? ' · sha256 未记录' : '')) + '</div>');
       });
       return;
     }

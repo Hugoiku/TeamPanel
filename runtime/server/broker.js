@@ -162,6 +162,7 @@ const trash = new Map();        // caseId -> { trash: 相对路径, at, files }
 const usage = new Map();        // caseId -> { agent: { input, output, cacheRead, total, runs, lastMs } }
 const reviews = new Map(); // caseId -> [review]  复核服务：一次服务 = (产物路径, 版本, audit|legal)
 const leadLeases = new Map(); // caseId -> { loopId, until, pid }  单 case 只能有一个 active Lead
+const evidenceHashCache = new Map(); // path+mtime+size -> sha256（文件证据现算，不回写证据）
 let reviewSeq = 0;
 /* ---------------------------------------------------------------- 配置与目录发现
  * 开源版：角色名单、默认模型、每员工默认技能、案例默认角色都从 config/desk.json 读；
@@ -6421,7 +6422,7 @@ function ensureFinalReview(caseId, service, rel, version, requester) {
       try { text = fs.readFileSync(vaultPath(caseId, "reports/investor-final.md"), "utf8"); } catch (e) {}
       return json(res, 200, { text, exists: !!text });
     }
-    function evidenceSourceInfo(e) {
+    function evidenceSourceInfo(e, caseId) {
       const raw = String(e.raw || "");
       const url = String(e.url || "");
       const tier = String(e.source_tier || e.tier || "");
@@ -6446,21 +6447,49 @@ function ensureFinalReview(caseId, service, rel, version, requester) {
         label = tierLabel[tier] || (tier ? ("来源：" + tier) : "未标注来源");
       }
       const rawName = raw ? path.basename(raw) : "";
-      const fileName = String(url).startsWith("uploads/") ? path.basename(url) : (rawName || "");
+      const uploadRel = (() => {
+        for (const s of [raw, url]) {
+          const m = String(s || "").match(/uploads\/[^；;（(]+?\.(pdf|xlsx|xls|csv|md|txt|json)/i);
+          if (m) return m[0].replace(/^.*?(uploads\/)/, "uploads/");
+        }
+        return "";
+      })();
+      const fileName = uploadRel ? path.basename(uploadRel) :
+        (String(url).startsWith("uploads/") ? path.basename(url.replace(/[（(].*$/, "")) : (rawName || ""));
       let sourceType = "other";
-      if (tier === "upload" || tier === "supervisor-upload" || String(url).startsWith("uploads/") || raw.includes("/uploads/")) sourceType = "file";
+      if (uploadRel || tier === "upload" || tier === "supervisor-upload") sourceType = "file";
       else if (/^https?:\/\//i.test(url)) sourceType = "url";
       else if (raw) sourceType = "connector";
       else if (tier === "derived" || tier === "internal-check") sourceType = "derived";
+      let sha = String(e.sha256 || "");
+      let hashComputed = false;
+      if (!sha && sourceType === "file") {
+        const candidates = [];
+        if (raw) candidates.push(path.isAbsolute(raw) ? raw : path.join(ROOT, raw));
+        if (uploadRel) candidates.push(path.join(ROOT, "vault", caseId, uploadRel));
+        if (String(url).startsWith("uploads/")) candidates.push(path.join(ROOT, "vault", caseId, url.replace(/[（(].*$/, "")));
+        for (const fp of candidates) {
+          try {
+            if (!fs.existsSync(fp)) continue;
+            const st = fs.statSync(fp);
+            if (st.size > 80 * 1024 * 1024) continue;
+            const key = fp + "|" + st.mtimeMs + "|" + st.size;
+            if (evidenceHashCache.has(key)) { sha = evidenceHashCache.get(key); }
+            else { sha = sha256(fs.readFileSync(fp)); evidenceHashCache.set(key, sha); }
+            hashComputed = true;
+            break;
+          } catch (e) {}
+        }
+      }
       return { sourceLabel: label, sourceTier: tier, sourceUrl: url, sourceRaw: rawName,
-        sourceType, fileName, sha256: String(e.sha256 || "") };
+        sourceType, fileName, sha256: sha, hashComputed };
     }
     if (p === "/api/evidence" && req.method === "GET") {
       const caseId = u.searchParams.get("case") || "default";
       const items = [];
       const superseded = loadEvidenceSuperseded(caseId);
-      try { for (const line of fs.readFileSync(vaultPath(caseId, "evidence/sources.jsonl"), "utf8").split(String.fromCharCode(10))) { if (!line.trim()) continue; try { const e = JSON.parse(line); const sp = superseded[e.id] || null; const si = evidenceSourceInfo(e); items.push({ id: e.id, field: e.field || "", value: typeof e.value === "object" ? JSON.stringify(e.value).slice(0, 1200) : String(e.value || "").slice(0, 1200), url: e.url || "", fetchedAt: e.fetched_at || "", tier: e.source_tier || "", sourceLabel: si.sourceLabel, sourceTier: si.sourceTier, sourceUrl: si.sourceUrl, sourceRaw: si.sourceRaw,
-                sourceType: si.sourceType, fileName: si.fileName, sha256: si.sha256, supersededBy: sp ? (sp.supersededBy || "") : "", superseded: !!sp, supersedeReason: sp ? (sp.reason || "") : "", supersededAt: sp ? (sp.at || "") : "" }); } catch (e) {} } } catch (e) {}
+      try { for (const line of fs.readFileSync(vaultPath(caseId, "evidence/sources.jsonl"), "utf8").split(String.fromCharCode(10))) { if (!line.trim()) continue; try { const e = JSON.parse(line); const sp = superseded[e.id] || null; const si = evidenceSourceInfo(e, caseId); items.push({ id: e.id, field: e.field || "", value: typeof e.value === "object" ? JSON.stringify(e.value).slice(0, 1200) : String(e.value || "").slice(0, 1200), url: e.url || "", fetchedAt: e.fetched_at || "", tier: e.source_tier || "", sourceLabel: si.sourceLabel, sourceTier: si.sourceTier, sourceUrl: si.sourceUrl, sourceRaw: si.sourceRaw,
+                sourceType: si.sourceType, fileName: si.fileName, sha256: si.sha256, hashComputed: si.hashComputed, supersededBy: sp ? (sp.supersededBy || "") : "", superseded: !!sp, supersedeReason: sp ? (sp.reason || "") : "", supersededAt: sp ? (sp.at || "") : "" }); } catch (e) {} } } catch (e) {}
       return json(res, 200, { items });
     }
     if (p === "/api/evidence/supersede" && req.method === "POST") {
