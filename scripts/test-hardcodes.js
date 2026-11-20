@@ -10,6 +10,8 @@ const broker = fs.readFileSync(path.join(ROOT, "runtime/server/broker.js"), "utf
 assert(!html.includes("AI短剧"), "template 不应包含旧案例 AI短剧");
 assert(!html.includes("case-2026-001"), "template 不应回退到固定 demo case");
 assert(!html.includes("MODEL_OPTS"), "模板不应写死模型目录");
+assert(!html.includes('id="dataTaskBox"'), "DataTask 不应作为独立面板；应嵌入 need");
+assert(html.includes('id="needLedgerBox"'), "数据缺口台账入口应存在");
 assert(!broker.includes('"reports/final-report.docx"'), "broker 应使用 FINAL_REPORT 常量");
 const legacy = (html.match(/final_report\.md/g) || []).length;
 assert(legacy <= 2, "final_report.md 只应保留 legacy 常量/注释，当前 " + legacy);

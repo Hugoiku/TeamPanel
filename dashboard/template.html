@@ -947,7 +947,7 @@ button.primary{background:#2563eb;border-color:#2563eb;color:#fff}
         <details class="lockbox opsub" id="finalPipelineBox"><summary>最终报告流水线 <span id="finalPipelineCount" class="sub"></span></summary><div class="locks" id="finalPipelineList"></div></details>
       </div></details>
       <details class="lockbox groupbox" id="dataGroupBox"><summary>数据与证据 <span class="sub">缺口 / 指标 / 来源</span></summary><div class="locks">
-        <details class="lockbox opsub" id="dataTaskBox"><summary>数据补齐任务 <span id="dataTaskCount" class="sub"></span></summary><div class="locks" id="dataTaskList"></div></details>
+        <details class="lockbox opsub" id="needLedgerBox"><summary>数据缺口 <span id="needLedgerCount" class="sub"></span></summary><div class="locks" id="needLedgerList"></div></details>
         <details class="lockbox opsub" id="dataReviewBox"><summary>数据待确认 <span id="dataReviewCount" class="sub"></span></summary><div class="locks" id="dataReviewList"></div></details>
         <details class="lockbox opsub" id="aliasBox"><summary>指标别名审核 <span id="aliasCount" class="sub"></span></summary><div class="locks" id="aliasList"></div></details>
         <details class="lockbox opsub" id="draftMetricBox"><summary>指标草稿 <span id="draftMetricCount" class="sub"></span></summary><div class="locks" id="draftMetricList"></div></details>
@@ -1863,7 +1863,7 @@ button.primary{background:#2563eb;border-color:#2563eb;color:#fff}
     if (fm && parseInt(fm[1], 10) < parseInt(fm[2], 10)) items.push({ k: "finalPipelineBox", label: "报告流水线 " + finalText });
     else if (/failed|失败/.test(finalText)) items.push({ k: "finalPipelineBox", label: "报告流水线异常" });
     var dtN = (liveDataTasks || []).filter(function (t) { return ["parsing","needs_more","needs_human","ready_for_review","source_pending","ready"].indexOf(t.status) >= 0; }).length;
-    if (dtN) items.push({ k: "dataTaskBox", label: "数据补齐 " + dtN });
+    if (dtN) items.push({ k: "needLedgerBox", label: "数据补齐 " + dtN });
     var dataN = issueBadgeNum("dataReviewCount");
     if (dataN) items.push({ k: "dataReviewBox", label: "数据待确认 " + dataN });
     var aliasN = issueBadgeNum("aliasCount");
@@ -1951,8 +1951,10 @@ button.primary{background:#2563eb;border-color:#2563eb;color:#fff}
       needs.forEach(function (n) {
         var a = S.agents[n.agent] || {};
         var sug = n.mergeSuggestion ? ' · 可能重复 ' + esc(n.mergeSuggestion.targetId || '') : '';
+        var dtl = needDataTasks(n.id);
+        var dtTxt = dtl.length ? ' · ' + dtl[0].id + ' ' + dtStatusCN(dtl[0].status) : '';
         h += '<div class="pendingitem" data-pending-need="' + esc(n.id || '') + '" title="' + esc(needBrief(n)) + '">' +
-          '<span class="pa">缺</span><span class="pt">' + esc(a.name || n.agent || '') + ' · ' + esc(n.title || '') + sug + '</span>' +
+          '<span class="pa">缺</span><span class="pt">' + esc(a.name || n.agent || '') + ' · ' + esc(n.title || '') + sug + esc(dtTxt) + '</span>' +
           (n.mergeSuggestion ? '<button class="skbtn" data-need-merge="' + esc(n.id + "|" + n.mergeSuggestion.targetId) + '">合并</button>' +
             '<button class="skbtn" data-need-ignore="' + esc(n.id || '') + '">保留</button>' :
             '<button class="skbtn" data-need-answer="' + esc(n.id || '') + '">答复</button>') + '</div>';
@@ -2829,26 +2831,59 @@ button.primary{background:#2563eb;border-color:#2563eb;color:#fff}
     };
     reader.readAsDataURL(file);
   }
-  function renderDataTasks() {
-    var el = $("dataTaskList"); if (!el) return;
-    var list = (liveDataTasks || []).slice().sort(function (a, b) { return String(b.createdAt || "").localeCompare(String(a.createdAt || "")); });
-    var active = list.filter(dtActive).length;
-    if ($("dataTaskCount")) $("dataTaskCount").textContent = active ? String(active) : "";
-    if (!list.length) { el.innerHTML = '<div class="empty" style="font-size:9.5px;color:#94a3b8">暂无数据补齐任务；从缺口弹窗点“用模型补齐”</div>'; return; }
-    el.innerHTML = list.slice(0, 15).map(function (t) {
-      var pct = Math.round(((t.coverage && t.coverage.overall) || 0) * 100);
-      var color = t.status === "closed" ? "#059669" : (t.status === "ready_for_review" ? "#2563eb" : (t.status === "needs_human" ? "#dc2626" : "#b45309"));
-      return '<div class="drow" data-dt-open="' + esc(t.id) + '" style="cursor:pointer;font-size:9.5px;line-height:1.55">' +
-        '<b>' + esc(t.id) + '</b> · ' + esc(String(t.needTitle || t.needId || "").slice(0, 30)) +
-        '<div style="color:' + color + '">' + esc(dtStatusCN(t.status)) + ' · 覆盖 ' + pct + '%' +
-        (t.nextAction ? ' · ' + esc(t.nextAction) : '') + '</div></div>';
+  function renderNeedLedger() {
+    var el = $("needLedgerList"); if (!el) return;
+    var all = (liveNeeds || []).slice();
+    var active = all.filter(function (n) { return !n.status || n.status === "pending" || n.status === "partial"; }).length;
+    if ($("needLedgerCount")) $("needLedgerCount").textContent = all.length ? (active ? ("待处理 " + active + " / 共 " + all.length) : ("共 " + all.length)) : "";
+    if (!all.length) { el.innerHTML = '<div class="empty" style="font-size:9.5px;color:#94a3b8">暂无数据缺口</div>'; return; }
+    all.sort(function (a, b) {
+      var aa = (!a.status || a.status === "pending" || a.status === "partial") ? 0 : 1;
+      var bb = (!b.status || b.status === "pending" || b.status === "partial") ? 0 : 1;
+      return aa - bb || String(b.createdAt || "").localeCompare(String(a.createdAt || ""));
+    });
+    var label = { pending: "待补", partial: "部分补齐", answered: "已答复", waived: "已豁免", superseded: "已替代" };
+    el.innerHTML = all.slice(0, 20).map(function (n) {
+      var dts = needDataTasks(n.id), dt = dts[0];
+      var st = label[n.status] || n.status || "待补";
+      var color = (n.status === "answered" || n.status === "waived") ? "#64748b" : (n.blocking ? "#dc2626" : "#b45309");
+      return '<div class="drow" data-need-open="' + esc(n.id) + '" style="cursor:pointer;font-size:9.5px;line-height:1.5">' +
+        '<b>' + esc(n.id) + '</b> · ' + esc(String(n.title || "").slice(0, 34)) +
+        '<div style="color:' + color + '">' + esc(st) + (dt ? ' · ' + esc(dt.id) + ' ' + esc(dtStatusCN(dt.status)) + ' · 覆盖 ' + Math.round(((dt.coverage && dt.coverage.overall) || 0) * 100) + '%' : '') + '</div></div>';
     }).join("");
-    el.querySelectorAll("[data-dt-open]").forEach(function (x) {
-      x.onclick = function () { dataTaskOpenId = x.getAttribute("data-dt-open"); renderDataTaskModal(); $("dataTaskMask").style.display = "flex"; };
+    el.querySelectorAll("[data-need-open]").forEach(function (x) {
+      x.onclick = function () { renderNeedModal(x.getAttribute("data-need-open")); $("needMask").style.display = "flex"; };
     });
   }
-
-
+  function needDataTasks(needId) {
+    return (liveDataTasks || []).filter(function (t) { return t.needId === needId; })
+      .sort(function (a, b) { return String(b.createdAt || "").localeCompare(String(a.createdAt || "")); });
+  }
+  function needDataTaskHTML(n) {
+    var list = needDataTasks(n.id);
+    if (!list.length) {
+      if (n.kind === "data" && n.status !== "answered" && n.status !== "waived") {
+        return '<div style="font-size:10px;color:#64748b;background:#f8fafc;border:1px dashed #cbd5e1;border-radius:6px;padding:6px 8px;margin-bottom:8px">数据补齐任务：尚未创建；点下方「用模型补齐」会在这里生成执行记录。</div>';
+      }
+      return '';
+    }
+    var h = '<div style="border:1px solid #dbeafe;background:#f8fbff;border-radius:8px;padding:7px 8px;margin-bottom:8px">' +
+      '<div style="font-size:10.5px;font-weight:650;color:#1d4ed8;margin-bottom:4px">数据补齐任务 <span style="font-weight:400;color:#64748b">（这条缺口的唯一执行记录）</span></div>';
+    list.slice(0, 4).forEach(function (t) {
+      var active = dtActive(t);
+      var pct = Math.round(((t.coverage && t.coverage.overall) || 0) * 100);
+      var color = t.status === "closed" ? "#059669" : (t.status === "ready_for_review" ? "#2563eb" : (t.status === "needs_human" ? "#dc2626" : "#b45309"));
+      h += '<div style="display:flex;align-items:center;gap:6px;font-size:10px;line-height:1.5;padding:3px 0;border-bottom:1px dashed #e2e8f0">' +
+        '<b>' + esc(t.id) + '</b>' +
+        '<span style="color:' + color + '">' + esc(dtStatusCN(t.status)) + '</span>' +
+        '<span style="color:#64748b">覆盖 ' + pct + '%</span>' +
+        (t.status === "needs_more" ? '<span style="color:#b45309">还缺数据</span>' : '') +
+        ((active && n.status !== "waived" && n.status !== "answered") ? '<button class="skbtn" data-need-dt-open="' + esc(t.id) + '" style="margin-left:auto;padding:0 5px;font-size:9px">继续处理</button>' :
+          '<button class="skbtn" data-need-dt-open="' + esc(t.id) + '" style="margin-left:auto;padding:0 5px;font-size:9px;color:#64748b">查看</button>') +
+        '</div>';
+    });
+    return h + '</div>';
+  }
   function renderNeedModal(id) {
     openNeedId = id;
     var el = $("needBody"); if (!el) return;
@@ -2856,6 +2891,7 @@ button.primary{background:#2563eb;border-color:#2563eb;color:#fff}
     if (!n) { el.innerHTML = '<div class="empty">找不到这条缺口</div>'; return; }
     var isApproval = /^\[(取消审批|装配审批)\]/.test(String(n.title || ""));
     var h = '<div style="font-size:13px;font-weight:700;margin-bottom:4px">' + esc(n.id + " · " + (n.title || "")) + '</div>';
+    h += needDataTaskHTML(n);
     if (n.source === "valuation") h += '<div style="font-size:10px;color:#1d4ed8;background:#eff6ff;border:1px solid #bfdbfe;border-radius:6px;padding:6px 8px;margin-bottom:8px">补齐后将自动回写 valuation.json、重算估值，并把报告标记为“待重新生成”。</div>';
     if (n.stage && n.stage !== "closed") {
       var stageCN = { auto_running: "自动采集中", auto_failed: "自动采集失败", no_source: "无可用数据源", needs_review: "来源待启用", quality_pending: "数据质量待确认", metric_pending: "指标匹配待确认", draft: "指标未注册", human_required: "需人工补充", datatask_running: "数据补齐中", datatask_review: "数据任务待确认", datatask_needs_human: "数据任务需人工", datatask_ready: "数据任务待开始", datatask_needs_source: "数据任务待补来源" }[n.stage] || n.stage;
@@ -2898,6 +2934,9 @@ button.primary{background:#2563eb;border-color:#2563eb;color:#fff}
       else if (sourceIdx >= 0) primary = { action: "source", label: "配置数据源", hint: "这个指标暂时没有可用数据源；先配置或上传，之后会自动采集。" };
       else if (unresolved.length) primary = { action: "upload", label: "上传文件 / 填写说明", hint: "可以直接上传文件，或在下方填写说明；系统会自动解析。" };
       else primary = { action: "submit", label: "提交答复", hint: "没有待处理项，可以直接提交答复。" };
+      var activeDT = needDataTasks(n.id).filter(dtActive)[0];
+      if (activeDT) primary = { action: "datatask", label: "继续数据任务",
+        hint: activeDT.id + " · " + dtStatusCN(activeDT.status) + "；在任务里补来源、开始解析或确认写入。" };
     }
     if (primary) {
       h += '<div style="font-size:11px;line-height:1.6;background:#eff6ff;border:1px solid #bfdbfe;border-radius:8px;padding:8px;margin:6px 0">' +
@@ -2935,12 +2974,12 @@ button.primary{background:#2563eb;border-color:#2563eb;color:#fff}
           (!ok && it.auto && it.auto.status === "needs_review" ? '<button class="skbtn need-adv" data-need-item-confirm="' + (n.id + "|" + i) + '" style="padding:0 5px;font-size:9px;color:#1d4ed8">确认</button>' : '') +
           (!ok && it.auto && (it.auto.status === "needs_paid_approval" || it.auto.status === "quota_exhausted") ? '<button class="skbtn need-adv" data-need-paid="' + (n.id + "|" + i) + '" style="padding:0 5px;font-size:9px;color:#b45309">批准付费</button>' : '') +
           '</div></div>' +
-          (ok ?
+          ((n.status === "waived" || n.status === "answered") ? "" : (ok ?
             '<button class="skbtn need-adv" data-need-item-reset="' + (n.id + "|" + i) + '" style="flex:none;padding:0 5px;font-size:9px;color:#b45309">撤销</button>' :
             '<div style="display:flex;gap:4px;flex:none">' +
             '<button class="skbtn" data-need-item-value="' + (n.id + "|" + i) + '" style="padding:0 5px;font-size:9px">填写</button>' +
             '<button class="skbtn" data-need-item-file="' + (n.id + "|" + i) + '" style="padding:0 5px;font-size:9px">传文件</button>' +
-            '<input type="file" id="needItemFile' + i + '" multiple style="display:none"></div>') +
+            '<input type="file" id="needItemFile' + i + '" multiple style="display:none"></div>')) +
           '</div>' +
           (!ok && it.lastAttempt ? '<div style="font-size:9.5px;color:#b45309;padding:0 0 5px 18px;line-height:1.45">网页解析尝试：' +
             esc((it.lastAttempt.found || "").slice(0, 140)) +
@@ -2959,6 +2998,9 @@ button.primary{background:#2563eb;border-color:#2563eb;color:#fff}
         '<div style="display:flex;gap:8px;margin-top:8px">' +
         '<button class="primary" id="needApprove">批准</button>' +
         '<button class="skbtn" id="needReject" style="color:#dc2626">拒绝</button></div>';
+    } else if (n.status === "waived") {
+      h += '<div style="font-size:11px;color:#b45309;background:#fffbeb;border:1px solid #fde68a;border-radius:8px;padding:8px;margin:6px 0">该缺口已豁免' +
+        (n.waiveReason ? '：' + esc(n.waiveReason) : '') + '；不再要求补齐。</div>';
     } else if (items.length) {
       h += '<div style="font-size:10.5px;color:#64748b;line-height:1.55;margin:8px 0">逐项补齐：每项可“填写”或“传文件（可多选）”；补齐后缺口自动关闭。如确实无法补齐，点“结束缺口”。</div>' +
         '<div style="display:flex;justify-content:flex-end;gap:8px;margin-top:8px">' +
@@ -2987,6 +3029,14 @@ button.primary{background:#2563eb;border-color:#2563eb;color:#fff}
       }
     }
     el.innerHTML = h;
+    Array.prototype.forEach.call(document.querySelectorAll("[data-need-dt-open]"), function (b) {
+      b.onclick = function () {
+        $("needMask").style.display = "none";
+        dataTaskOpenId = b.getAttribute("data-need-dt-open");
+        renderDataTaskModal();
+        $("dataTaskMask").style.display = "flex";
+      };
+    });
     var advOn = false;
     if ($("needAdvancedToggle")) $("needAdvancedToggle").onclick = function () {
       advOn = !advOn;
@@ -6513,7 +6563,7 @@ button.primary{background:#2563eb;border-color:#2563eb;color:#fff}
       setHTML(el,h); applyMidTab();
     }).catch(function(){});
   }
-  function render() { renderHeader(); renderSetupBanner(); renderAlerts(); renderStaff(); renderInbox(); renderLeft(); renderPending(); renderPendingDetail(); renderDeliverables(); renderUploads(); renderPlans(); renderMid(); renderGraph(); renderModelStrip(); renderLocks(); renderCaseView(); renderQuality(); renderClaimObjects(); renderBriefObjects(); renderKnowledgeView(); renderNextStep(); renderInvestorDash(); renderDataReview(); renderAliasReview(); renderMetricDrafts(); renderEvidence(); renderConflicts(); renderFinalPipeline(); renderAsyncJobs(); renderRightDeliverables(); renderDataJobs(); renderDataTasks(); renderModelBar(); renderTaskSummary(); renderCompletion(); renderIntakeDecision(); renderIssueNav(); setTimeout(renderIssueNav, 400); setTimeout(renderIssueNav, 1200); setTimeout(renderModelLinks, 80);
+  function render() { renderHeader(); renderSetupBanner(); renderAlerts(); renderStaff(); renderInbox(); renderLeft(); renderPending(); renderPendingDetail(); renderDeliverables(); renderUploads(); renderPlans(); renderMid(); renderGraph(); renderModelStrip(); renderLocks(); renderCaseView(); renderQuality(); renderClaimObjects(); renderBriefObjects(); renderKnowledgeView(); renderNextStep(); renderInvestorDash(); renderNeedLedger(); renderDataReview(); renderAliasReview(); renderMetricDrafts(); renderEvidence(); renderConflicts(); renderFinalPipeline(); renderAsyncJobs(); renderRightDeliverables(); renderDataJobs(); renderModelBar(); renderTaskSummary(); renderCompletion(); renderIntakeDecision(); renderIssueNav(); setTimeout(renderIssueNav, 400); setTimeout(renderIssueNav, 1200); setTimeout(renderModelLinks, 80);
     var sm = $("setMask"); if (sm && sm.style.display !== "none") renderSettings();
     var cm = $("caseMask"); if (cm && cm.style.display !== "none") renderCaseModal();
     var tm = $("taskMask"); if (tm && tm.style.display !== "none") renderTaskModal();

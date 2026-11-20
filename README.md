@@ -44,7 +44,7 @@ Case → Plan → WorkItem → Employee Loop → Gate → Evidence → Report �
 | 知识视图 | 只读知识检索，员工可查已有证据/claim，但不能自行提升或改权限 |
 | Lead 恢复 | 单 Lead 租约、心跳、resume、takeover、failureKind |
 | 报告交付 | 复核、签发、verify，报告 artifact 路径集中管理 |
-| 缺口闭环 | 待补 / 部分补齐 / 已豁免，并显示对报告的影响 |
+| 缺口闭环 | need 是唯一缺口对象；待补 / 部分补齐 / 已豁免；DataTask 作为执行记录嵌在缺口详情里 |
 
 > 当前知识层是只读视图，不是完整候选/验证知识池；完整知识治理仍属后续阶段。
 
