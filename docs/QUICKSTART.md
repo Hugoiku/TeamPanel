@@ -18,7 +18,7 @@
 |---|---|---|
 | Node.js ≥ 18 | 必需 | Broker 零依赖，只用内置模块 |
 | DeepSeek Harness（dsh CLI） | 员工必需 | 员工的运行本体；`DSH_BIN` 可指定路径，否则按 PATH → macOS App 路径找 |
-| 模型 provider 凭据 | 员工必需 | 由 dsh 实际使用的 provider 决定：key 放环境变量或 `~/.dsh/.credentials.yaml`；**面板不会保存明文** |
+| 模型 provider 凭据 | 员工必需 | 初始默认建议与 dsh 当前可用模型一致；之后可在 Panel 换模型。key 放环境变量或 `~/.dsh/.credentials.yaml`；**面板不会保存明文** |
 | 网络 | 取数时必需 | `scripts/market` 走新浪/东财/Tushare |
 | Tushare token | 可选 | `runtime/secrets/tushare.json`（chmod 600，已 gitignore）；没有就取不到 Tushare 数据 |
 
@@ -40,7 +40,8 @@ cp .env.example .env
 ```
 
 `config/desk.json` 里的 opencode-go 只是示例默认值，不是硬性要求。  
-只要你用的 provider/model 已经在 dsh 里能正常调用，在面板模型配置里填同一组 provider/model 即可；  
+部署时建议把 **Panel 初始默认模型**设成 dsh 当前正在用的 provider/model，保证第一次派活能跑；  
+跑通后，Panel 模型配置是独立的：可以全员换模型、给单个员工换模型、加多个 provider，不要求与 dsh 一直一致。  
 自建 OpenAI 兼容网关再补 base_url。
 
 ## 3.5 可配置项（config/desk.json）
@@ -84,7 +85,7 @@ HOST=0.0.0.0 PANEL_TOKEN='换成你的口令' ./start.sh
 面板左下角「模型配置」可以（开源默认**不预置任何模型**；作者自己的环境可写进 gitignored 的 `config/desk.local.json`）：
 
 > 下面出现的 `opencode-go/deepseek-v4.1-flash` 只是示例，不是唯一支持项。  
-> 只要 dsh 能正常调用你的 provider/model，就在面板里配置同一组 provider/model；  
+> 初始默认模型建议先用 dsh 当前能调用的那一组；跑通后可在面板切换其他模型。  
 > 需要自建网关时再填 Base URL。
 
 - 改**全员默认模型**；

@@ -74,11 +74,13 @@ Case → Plan → WorkItem → Employee Loop → Gate → Evidence → Report �
    - 如果用户已说明，按其 provider / model / base_url / key 配置；
    - 如果 DSH 依赖账号登录而不是环境变量，先用 dry-run 验证 Panel 子进程能否复用；
    - 需要 key 时，让用户把 key 写入 .env 的对应变量，不要打印值。
-5. 在 Panel 模型配置里写入与 DSH 一致的那一条：
-   - provider、model 必须与 dsh 可用模型一致；
+5. 初始配置：把 Panel 的默认模型设为 dsh 当前正在使用的 provider/model：
+   - 目的只是保证 Panel 第一次派活能跑通；
    - 自建/provider 需要 base_url 时填 base_url；
    - key_ref 用 env:YOUR_KEY_NAME，不写明文；
    - 如果 config/desk.json 的示例模型不是用户可用模型，改 config/desk.local.json 或面板默认模型，不要改源码默认值。
+   注意：这只是初始默认值；之后用户可以在面板给单个员工或全员切换其他模型，
+   Panel 不要求所有模型都与 dsh 保持一致。
 6. 确认 dsh 可用；如果不在 PATH，设置 DSH_BIN 为实际绝对路径。
 7. 启动：./start.sh；如果端口占用，使用 PORT=7802 ./start.sh。
 8. 验证：
@@ -97,10 +99,32 @@ Case → Plan → WorkItem → Employee Loop → Gate → Evidence → Report �
 
 重要：
 部署 Agent 自己的模型调用权限，不等于 Panel 员工的模型凭据。
-Panel 员工由 dsh 子进程启动，必须使用 dsh 真正能调用的 provider/model；
+Panel 员工由 dsh 子进程启动，初始默认要使用 dsh 当前能调用的 provider/model；
+跑通后可以在 Panel 切换到其他 dsh 能加载的 provider/model。
 不要假设一定是 opencode-go，也不要假设任何固定 provider。
 如果唯一可用的 provider 需要额外 key，让用户提供，不能伪造。
 ~~~
+
+### 模型策略：初始一致，之后自由
+
+部署时只要求一件事：
+
+~~~text
+Panel 初始默认模型 = dsh 当前正在使用的模型
+~~~
+
+原因是第一次派活要能跑通。
+
+跑通之后，Panel 的模型配置是独立的：
+
+~~~text
+可以全员换模型
+可以给单个员工换模型
+可以加多个 provider / 网关
+不要求与 dsh 当前模型一直一致
+~~~
+
+所以 Agent 不应该把“Panel 模型必须永远等于 dsh”写死。
 
 ### 正式使用的最低验收
 
@@ -111,7 +135,7 @@ Node.js >= 18
 dsh 能找到
 /api/health 返回 ok
 /api/doctor 中 node / dsh / config / vault 通过
-/api/models 里至少有一条与用户 DSH 实际可用模型一致的条目
+/api/models 的初始默认模型与 dsh 当前使用模型一致（保证第一次能跑）
 dry-run 能启动员工进程
 用户能给一个 case 派活并看到 agent.run.started
 ~~~
@@ -170,7 +194,8 @@ DeepSeek Harness（dsh CLI）  必须
 
 - dsh 要出现在 PATH，或通过 DSH_BIN 指定路径；
 - 没有 dsh 时面板仍能打开，但员工无法启动，顶部会提示「未找到 dsh」；
-- Panel 不限定 provider：opencode-go、DeepSeek、Anthropic、OpenAI 兼容网关等，只要 dsh 真正能调用即可；
+- Panel 不限定 provider：opencode-go、DeepSeek、Anthropic、OpenAI 兼容网关等都可以；
+- **初始默认模型**应与 dsh 当前可用模型一致，保证第一次派活能跑；跑通后可在面板自由切换；
 - 模型凭据放在 .env 或 ~/.dsh/.credentials.yaml，不要提交到仓库。
 
 首次启动后：面板左下角「模型配置」→ 选择或新建与 dsh 实际可用模型一致的条目 → 保存并应用。  
