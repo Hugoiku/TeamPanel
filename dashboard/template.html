@@ -951,6 +951,8 @@ button.primary{background:#2563eb;border-color:#2563eb;color:#fff}
         <details class="lockbox opsub" id="draftMetricBox"><summary>指标草稿 <span id="draftMetricCount" class="sub"></span></summary><div class="locks" id="draftMetricList"></div></details>
         <details class="lockbox opsub" id="sourceHealthBox"><summary>数据源 <span id="sourceHealthBadge" class="sub"></span></summary><div class="locks" id="sourceHealthList"></div></details>
         <details class="lockbox opsub" id="qualityBox"><summary>报告质量 <span id="qualityCount" class="sub"></span></summary><div class="locks" id="qualityList"></div></details>
+        <details class="lockbox opsub" id="claimBox"><summary>论点映射 <span id="claimCount" class="sub"></span></summary><div class="locks" id="claimList"></div></details>
+        <details class="lockbox opsub" id="briefBox"><summary>Brief 完整性 <span id="briefCount" class="sub"></span></summary><div class="locks" id="briefList"></div></details>
         <details class="lockbox opsub" id="evidenceBox"><summary>证据索引 <span id="evidenceCount" class="sub"></span></summary><div class="locks" id="evidenceList"></div></details>
       </div></details>
       <details class="lockbox groupbox" id="execGroupBox"><summary>执行与运维 <span class="sub">循环 / 交付 / 任务</span></summary><div class="locks">
@@ -5684,6 +5686,34 @@ button.primary{background:#2563eb;border-color:#2563eb;color:#fff}
       setHTML(el, h);
     }).catch(function () {});
   }
+  function renderClaimObjects() {
+    var el = $("claimList"), cnt = $("claimCount"); if (!el) return;
+    fetch(API + "/api/case/objects?case=" + encodeURIComponent(CASE_ID) + "&type=claim").then(function (r) { return r.json(); }).then(function (j) {
+      var items = (j && j.items) || [], c = (j && j.counts) || {};
+      if (cnt) cnt.textContent = (c.mapped || 0) + "/" + (c.total || 0);
+      var h = items.map(function (x) {
+        return '<div class="drow" style="font-size:9.5px"><b>' + esc(x.id) + '</b> ' +
+          '<span style="color:' + (x.mapped ? "#059669" : "#b45309") + '">' + (x.mapped ? "已映射" : "未映射") + '</span> · ' +
+          esc(String(x.text || "").slice(0, 70)) + (x.refs && x.refs.length ? ' <span style="color:#94a3b8">' + esc(x.refs.join(",")) + '</span>' : '') + '</div>';
+      }).join("");
+      setHTML(el, h || '<div class="empty" style="padding:4px 0">暂无论点</div>');
+    }).catch(function () {});
+  }
+  function renderBriefObjects() {
+    var el = $("briefList"), cnt = $("briefCount"); if (!el) return;
+    fetch(API + "/api/case/objects?case=" + encodeURIComponent(CASE_ID) + "&type=brief").then(function (r) { return r.json(); }).then(function (j) {
+      var items = (j && j.items) || [], c = (j && j.counts) || {};
+      if (cnt) cnt.textContent = (c.complete || 0) + "/" + (c.total || 0);
+      var label = { complete: "完整", partial: "不完整", empty: "空", missing: "缺失" };
+      var col = { complete: "#059669", partial: "#b45309", empty: "#dc2626", missing: "#dc2626" };
+      var h = items.map(function (x) {
+        return '<div class="drow" style="font-size:9.5px"><b>' + esc(x.agent) + '</b> ' +
+          '<span style="color:' + (col[x.status] || "#64748b") + '">' + esc(label[x.status] || x.status) + '</span> · stance ' +
+          esc(x.stance || "-") + ' · claims ' + (x.claims || 0) + ' · assumptions ' + (x.assumptions || 0) + '</div>';
+      }).join("");
+      setHTML(el, h || '<div class="empty" style="padding:4px 0">暂无 Brief</div>');
+    }).catch(function () {});
+  }
   var liveCaseView = null;
   function renderCaseView() {
     var el = $("caseViewBanner"); if (!el) return;
@@ -6384,7 +6414,7 @@ button.primary{background:#2563eb;border-color:#2563eb;color:#fff}
       setHTML(el,h); applyMidTab();
     }).catch(function(){});
   }
-  function render() { renderHeader(); renderSetupBanner(); renderAlerts(); renderStaff(); renderInbox(); renderLeft(); renderPending(); renderPendingDetail(); renderDeliverables(); renderUploads(); renderPlans(); renderMid(); renderGraph(); renderModelStrip(); renderLocks(); renderCaseView(); renderQuality(); renderNextStep(); renderInvestorDash(); renderDataReview(); renderAliasReview(); renderMetricDrafts(); renderEvidence(); renderConflicts(); renderFinalPipeline(); renderAsyncJobs(); renderRightDeliverables(); renderDataJobs(); renderDataTasks(); renderModelBar(); renderTaskSummary(); renderCompletion(); renderIntakeDecision(); renderIssueNav(); setTimeout(renderIssueNav, 400); setTimeout(renderIssueNav, 1200); setTimeout(renderModelLinks, 80);
+  function render() { renderHeader(); renderSetupBanner(); renderAlerts(); renderStaff(); renderInbox(); renderLeft(); renderPending(); renderPendingDetail(); renderDeliverables(); renderUploads(); renderPlans(); renderMid(); renderGraph(); renderModelStrip(); renderLocks(); renderCaseView(); renderQuality(); renderClaimObjects(); renderBriefObjects(); renderNextStep(); renderInvestorDash(); renderDataReview(); renderAliasReview(); renderMetricDrafts(); renderEvidence(); renderConflicts(); renderFinalPipeline(); renderAsyncJobs(); renderRightDeliverables(); renderDataJobs(); renderDataTasks(); renderModelBar(); renderTaskSummary(); renderCompletion(); renderIntakeDecision(); renderIssueNav(); setTimeout(renderIssueNav, 400); setTimeout(renderIssueNav, 1200); setTimeout(renderModelLinks, 80);
     var sm = $("setMask"); if (sm && sm.style.display !== "none") renderSettings();
     var cm = $("caseMask"); if (cm && cm.style.display !== "none") renderCaseModal();
     var tm = $("taskMask"); if (tm && tm.style.display !== "none") renderTaskModal();
@@ -8047,7 +8077,12 @@ button.primary{background:#2563eb;border-color:#2563eb;color:#fff}
         return;
       }
       if (ca === "sign_report") { var sb = $("btnSign"); if (sb) sb.click(); return; }
-      if (ca === "inspect_evidence") { var eb = $("evidenceBox"); if (eb) { eb.open = true; try { eb.scrollIntoView({ behavior: "smooth", block: "center" }); } catch (e) {} } return; }
+      if (ca === "inspect_evidence" || ca === "inspect_claims" || ca === "inspect_brief") {
+        var bid = ca === "inspect_evidence" ? "evidenceBox" : (ca === "inspect_claims" ? "claimBox" : "briefBox");
+        var bb = $(bid);
+        if (bb) { bb.open = true; var bp = bb.parentElement; while (bp) { if (bp.tagName === "DETAILS") bp.open = true; bp = bp.parentElement; } try { bb.scrollIntoView({ behavior: "smooth", block: "center" }); } catch (e) {} }
+        return;
+      }
       return;
     }
     if (t.closest("[data-next-step]")) {
