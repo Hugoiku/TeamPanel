@@ -6275,6 +6275,23 @@ function ensureFinalReview(caseId, service, rel, version, requester) {
       });
       return json(res, 200, view);
     }
+    if (p === "/api/case/objects" && req.method === "GET") {
+      const caseId = u.searchParams.get("case") || "default";
+      const type = String(u.searchParams.get("type") || "evidence");
+      const caseDir = path.join(ROOT, "vault", caseId);
+      if (type === "claim") {
+        const d = caseView.claimSummary(caseDir);
+        return json(res, 200, { ok: true, type, counts: { total: d.total, mapped: d.mapped, unmapped: d.unmapped }, items: d.items.slice(0, 100) });
+      }
+      if (type === "brief") {
+        const d = caseView.briefSummary(caseDir);
+        return json(res, 200, { ok: true, type, counts: { total: d.total, complete: d.complete }, items: d.items });
+      }
+      const d = caseView.evidenceSummary(caseDir);
+      return json(res, 200, { ok: true, type: "evidence",
+        counts: { total: d.total, verified: d.verified, unverified: d.unverified, conflict: d.conflict, stale: d.stale, superseded: d.superseded },
+        items: d.items.slice(-200) });
+    }
     if (p === "/api/final/status" && req.method === "GET") {
       const caseId = u.searchParams.get("case") || "default";
       const baseR = vaultPath(caseId, "research");

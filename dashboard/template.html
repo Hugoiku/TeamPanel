@@ -5627,13 +5627,42 @@ button.primary{background:#2563eb;border-color:#2563eb;color:#fff}
   }
   function renderEvidence() {
     var el = $("evidenceList"), cnt = $("evidenceCount"); if (!el) return;
-    fetch(API + "/api/evidence?case=" + encodeURIComponent(CASE_ID)).then(function(r){return r.json();}).then(function(j){
-      var items = j.items || []; if (cnt) cnt.textContent = items.length ? String(items.length) : "";
+    Promise.all([
+      fetch(API + "/api/evidence?case=" + encodeURIComponent(CASE_ID)).then(function (r) { return r.json(); }),
+      fetch(API + "/api/case/objects?case=" + encodeURIComponent(CASE_ID) + "&type=evidence").then(function (r) { return r.json(); })
+    ]).then(function (arr) {
+      var items = (arr[0] && arr[0].items) || [];
+      var st = {};
+      ((arr[1] && arr[1].items) || []).forEach(function (x) { st[x.id] = x.status; });
+      if (cnt) cnt.textContent = items.length ? String(items.length) : "";
+      var label = { verified: "已验证", unverified: "未验证", conflict: "冲突", stale: "过期", superseded: "已替代" };
+      var col = { verified: "#059669", unverified: "#b45309", conflict: "#dc2626", stale: "#b45309", superseded: "#64748b" };
       var h = "";
-      items.slice(-60).reverse().forEach(function(x){ h += '<div class="drow" data-evidence-id="' + esc(x.id) + '" style="cursor:pointer;font-size:9.5px' + (x.superseded ? ';opacity:.55' : '') + '"><b>' + esc(x.id) + '</b> · ' + esc(String(x.field||"").slice(0,42)) + (x.superseded ? ' <span style="color:#b45309">已替代' + (x.supersededBy ? '→' + esc(x.supersededBy) : '') + '</span>' : '') + '</div>'; });
+      items.slice(-60).reverse().forEach(function (x) {
+        var s = st[x.id] || (x.superseded ? "superseded" : "unverified");
+        h += '<div class="drow" data-evidence-id="' + esc(x.id) + '" style="cursor:pointer;font-size:9.5px' + (x.superseded ? ';opacity:.55' : '') + '">' +
+          '<b>' + esc(x.id) + '</b> <span style="color:' + (col[s] || "#64748b") + ';font-size:8.5px">' + esc(label[s] || s) + '</span> · ' + esc(String(x.field || "").slice(0, 38)) +
+          (x.superseded ? ' <span style="color:#b45309">已替代' + (x.supersededBy ? '→' + esc(x.supersededBy) : '') + '</span>' : '') + '</div>';
+      });
       setHTML(el, h || '<div class="empty" style="padding:4px 0">暂无证据</div>');
-      var rows = el.querySelectorAll("[data-evidence-id]"); for (var i=0;i<rows.length;i++) (function(row){ row.onclick = function(){ fetch(API+"/api/evidence?case="+encodeURIComponent(CASE_ID)).then(function(r){return r.json();}).then(function(jj){ var x=(jj.items||[]).filter(function(z){return z.id===row.getAttribute("data-evidence-id");})[0]; if(!x)return; if($("evidenceTitle"))$("evidenceTitle").textContent="证据 "+x.id; setHTML($("evidenceBody"), '<div style="font-size:10px;color:#64748b">'+esc(x.field||"")+'</div>' + (x.superseded ? '<div style="font-size:10px;color:#b45309;margin-top:4px">已替代'+(x.supersededBy?' → '+esc(x.supersededBy):'')+' · '+esc(x.supersedeReason||'')+'</div>' : '') + '<div style="font-size:11px;color:#334155;line-height:1.6;margin:6px 0;word-break:break-word">'+esc(x.value||"")+'</div><div style="font-size:9.5px;color:#94a3b8;word-break:break-all">'+esc(x.url||"")+' · '+esc(x.fetchedAt||"")+' · '+esc(x.tier||"")+'</div>'); $("evidenceMask").style.display="flex"; }); }; })(rows[i]);
-    }).catch(function(){});
+      var rows = el.querySelectorAll("[data-evidence-id]");
+      for (var i = 0; i < rows.length; i++) (function (row) {
+        row.onclick = function () {
+          var id = row.getAttribute("data-evidence-id");
+          fetch(API + "/api/evidence?case=" + encodeURIComponent(CASE_ID)).then(function (r) { return r.json(); }).then(function (jj) {
+            var x = (jj.items || []).filter(function (z) { return z.id === id; })[0]; if (!x) return;
+            if ($("evidenceTitle")) $("evidenceTitle").textContent = "证据 " + x.id;
+            var s = st[x.id] || (x.superseded ? "superseded" : "unverified");
+            setHTML($("evidenceBody"), '<div style="font-size:10px;color:#64748b">' + esc(x.field || "") + '</div>' +
+              '<div style="font-size:10px;margin-top:3px;color:' + (col[s] || "#64748b") + '">状态：' + esc(label[s] || s) + '</div>' +
+              (x.superseded ? '<div style="font-size:10px;color:#b45309;margin-top:4px">已替代' + (x.supersededBy ? ' → ' + esc(x.supersededBy) : '') + ' · ' + esc(x.supersedeReason || '') + '</div>' : '') +
+              '<div style="font-size:11px;color:#334155;line-height:1.6;margin:6px 0;word-break:break-word">' + esc(x.value || "") + '</div>' +
+              '<div style="font-size:9.5px;color:#94a3b8;word-break:break-all">' + esc(x.url || "") + ' · ' + esc(x.fetchedAt || "") + ' · ' + esc(x.tier || "") + '</div>');
+            $("evidenceMask").style.display = "flex";
+          });
+        };
+      })(rows[i]);
+    }).catch(function () {});
   }
   var liveCaseView = null;
   function renderCaseView() {
