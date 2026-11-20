@@ -70,6 +70,7 @@ function decisionPrompt(caseId, objective, round, maxRounds, obs) {
     "- 有阻塞缺口/需要用户决策 → ask_human；",
     "- 如果缺口/DataJob 状态是 needs_paid_approval / quota_exhausted → ask_human，不要反复 spawn 员工；",
     "- 如果状态是 rate_limited / circuit_open → wait 或 revise_plan 换源，不要立即重试；",
+    "- 需要已有事实时调用 knowledge.search；只有 verified + report_citation 的知识可用于结论；不要提升/改权限；",
     "- 产物需要独立复核 → request_review；",
     "- 需要取消任务 → cancel_task（高风险，需人工审批）；",
     "- 所有计划完成且报告未装配 → synthesize（只装配、不签发；需人工审批）；",

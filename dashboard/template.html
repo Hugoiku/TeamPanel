@@ -953,7 +953,9 @@ button.primary{background:#2563eb;border-color:#2563eb;color:#fff}
         <details class="lockbox opsub" id="qualityBox"><summary>报告质量 <span id="qualityCount" class="sub"></span></summary><div class="locks" id="qualityList"></div></details>
         <details class="lockbox opsub" id="claimBox"><summary>论点映射 <span id="claimCount" class="sub"></span></summary><div class="locks" id="claimList"></div></details>
         <details class="lockbox opsub" id="briefBox"><summary>Brief 完整性 <span id="briefCount" class="sub"></span></summary><div class="locks" id="briefList"></div></details>
-        <details class="lockbox opsub" id="knowledgeBox"><summary>知识视图 <span id="knowledgeCount" class="sub"></span></summary><div class="locks" id="knowledgeList"></div></details>
+        <details class="lockbox opsub" id="knowledgeBox"><summary>知识视图 <span id="knowledgeCount" class="sub"></span></summary>
+          <div style="display:flex;gap:4px;padding:2px 0 4px"><input id="knowledgeFilter" placeholder="筛选 id / 标题 / 值" style="flex:1;min-width:0;font-size:9px;padding:2px 5px"><select id="knowledgeStatus" style="font-size:9px"><option value="">全部状态</option><option value="verified">已验证</option><option value="mapped">已映射</option><option value="unverified">未验证</option><option value="conflict">冲突</option></select></div>
+          <div class="locks" id="knowledgeList"></div></details>
         <details class="lockbox opsub" id="evidenceBox"><summary>证据索引 <span id="evidenceCount" class="sub"></span></summary><div class="locks" id="evidenceList"></div></details>
       </div></details>
       <details class="lockbox groupbox" id="execGroupBox"><summary>执行与运维 <span class="sub">循环 / 交付 / 任务</span></summary><div class="locks">
@@ -5729,10 +5731,21 @@ button.primary{background:#2563eb;border-color:#2563eb;color:#fff}
       if (cnt) cnt.textContent = String(entries.length || "");
       var h = entries.slice(-80).reverse().map(function (x) {
         var c = x.status === "verified" || x.status === "mapped" ? "#059669" : (x.status === "conflict" ? "#dc2626" : "#b45309");
-        return '<div class="drow" data-knowledge-id="' + esc(x.id) + '" style="cursor:pointer;font-size:9.5px"><b>' + esc(x.id) + '</b> ' +
+        return '<div class="drow" data-knowledge-id="' + esc(x.id) + '" data-kstatus="' + esc(x.status) + '" data-ktext="' + esc((x.id + " " + (x.title || "") + " " + (x.value || "")).toLowerCase()) + '" style="cursor:pointer;font-size:9.5px"><b>' + esc(x.id) + '</b> ' +
           '<span style="color:' + c + '">' + esc(x.status) + '</span> · ' + esc(String(x.title || "").slice(0, 64)) + '</div>';
       }).join("");
       setHTML(el, h || '<div class="empty" style="padding:4px 0">暂无知识条目</div>');
+      var kf = $("knowledgeFilter"), ks = $("knowledgeStatus");
+      function applyKFilter() {
+        var q = String((kf && kf.value) || "").toLowerCase().trim();
+        var s = String((ks && ks.value) || "");
+        Array.prototype.forEach.call(el.querySelectorAll("[data-knowledge-id]"), function (row) {
+          var ok = (!q || String(row.getAttribute("data-ktext") || "").indexOf(q) >= 0) && (!s || row.getAttribute("data-kstatus") === s);
+          row.style.display = ok ? "" : "none";
+        });
+      }
+      if (kf) kf.oninput = applyKFilter;
+      if (ks) ks.onchange = applyKFilter;
     }).catch(function () {});
   }
   function showInfoDetail(title, html) {

@@ -27,6 +27,7 @@ function contractPrompt(agent, caseId, task, round, maxRounds, prev, work) {
     "工作方式：",
     "1. 先读任务相关文件/记忆（用 ./scripts/desk 或 node scripts/memory.js）；",
     "2. 需要数据/证据时，优先用 data.request / data.collect 工具（走 DataGateway 的配额/幂等/快照）；不要直接调 collect.js 绕开网关；",
+    "2.5 需要本 case 已有事实时，用 knowledge.search 检索；只有 status=verified 且 allowedUses 含 report_citation 的知识才能进入报告结论，未验证/仅分析用的只能作探索；不得修改知识权限或提升状态；",
     "3. 数字必须有 [S#] 或明确标注缺口；缺数据用 ./scripts/desk need 上报，不要编造；",
     "4. 每轮结束前，在回答最后放一个 JSON 结果契约（只放一个 JSON 对象）：",
     "{",
