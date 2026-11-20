@@ -5988,6 +5988,10 @@ button.primary{background:#2563eb;border-color:#2563eb;color:#fff}
             esc(s.label) + '<span class="ver" style="color:' + c + '">' + esc(s.status) + '</span></div>' +
             '<div class="fh" style="color:#64748b">' + esc(s.detail || "") + '</div></div>';
         });
+        if (j && (j.stages || []).some(function (x) { return x.id === "cross-review" && x.status === "failed"; })) {
+          h += '<div style="display:flex;justify-content:flex-end;gap:4px;margin-top:4px">' +
+            '<button class="skbtn" data-cross-review-waive="1" style="padding:0 6px;font-size:9px;color:#b45309">测试豁免交叉复核</button></div>';
+        }
         if (j && (j.stages || []).some(function (x) { return x.id === "semantic" && x.status === "failed"; })) {
           h += '<div style="display:flex;justify-content:flex-end;gap:4px;margin-top:4px">' +
             '<button class="skbtn" data-semantic-retry="1" style="padding:0 6px;font-size:9px">重试语义审核</button>' +
@@ -8066,6 +8070,16 @@ button.primary{background:#2563eb;border-color:#2563eb;color:#fff}
         .then(function (r) { return r.json(); })
         .then(function (j) { toast(j.ok ? "已重新排队语义审核" : ("提交失败：" + (j.error || ""))); renderFinalPipeline(); })
         .catch(function (e) { toast("提交失败：" + (e && e.message || e)); });
+      return;
+    }
+    if (t.closest("[data-cross-review-waive]")) {
+      var why = prompt("测试豁免交叉复核：请填写理由（会写入账本/报告 manifest）", "测试报告输出，已知悉 high 问题");
+      if (!why) return;
+      fetch(API + "/api/final/waive-cross-review", { method: "POST", headers: { "content-type": "application/json" },
+        body: JSON.stringify({ case: CASE_ID, reason: why, by: "you" }) })
+        .then(function (r) { return r.json(); })
+        .then(function (j) { toast(j.ok ? "已豁免交叉复核" : ("豁免失败：" + (j.error || ""))); renderFinalPipeline(); renderCaseView(); livePoll(); })
+        .catch(function (e) { toast("豁免失败：" + (e && e.message || e)); });
       return;
     }
     if (t.closest("[data-semantic-waive]")) {

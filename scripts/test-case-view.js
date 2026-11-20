@@ -53,6 +53,11 @@ const staleCross = view({ plans: [{ id: "P1", status: "approved" }], works: [{ i
 assert.strictEqual(staleCross.primaryAction.id, "fix_cross_review");
 assert.ok(staleCross.blocking.some(x => x.id === "review:cross:high"));
 
+const staleCrossWaived = view({ plans: [{ id: "P1", status: "approved" }], works: [{ id: "W1", state: "done" }], finalExists: true,
+  reportStale: true, crossReviewHigh: 2, crossReviewWaived: true });
+assert.strictEqual(staleCrossWaived.primaryAction.id, "regenerate_report");
+assert.ok(!staleCrossWaived.blocking.some(x => x.id === "review:cross:high"));
+
 const signed = view({ plans: [{ id: "P1", status: "approved" }], works: [{ id: "W1", state: "done" }], finalExists: true,
   reviews: [{ service: "audit", status: "clean", path: "reports/final-report.docx" },
     { service: "legal", status: "clean", path: "reports/final-report.docx" }],

@@ -5905,8 +5905,20 @@ function ensureFinalReview(caseId, service, rel, version, requester) {
         if (!waiver || waiver.ok !== true) return json(res, 409, { error: "语义复核未完成：" + (sem0.error || "model empty"),
           semantic: { ok: false }, hint: "如需接受确定性 cross-review，请显式 waiver" });
       }
-      if (review && review.high > 0) return json(res, 409, { error: "交叉复核存在 high 问题，禁止生成最终报告",
-        crossReview: { high: review.high, issues: (review.issues || []).filter(x => x.severity === "high").slice(0, 8) } });
+      let crossWaiverUsed = null;
+      if (review && review.high > 0) {
+        const highIssues = (review.issues || []).filter(x => x.severity === "high");
+        const highHash = sha256(JSON.stringify(highIssues.map(x => ({ type: x.type, from: x.from, to: x.to, message: x.message }))));
+        let waiver = null;
+        try { waiver = JSON.parse(fs.readFileSync(vaultPath(caseId, "research/cross-review-waiver.json"), "utf8")); } catch (e) {}
+        if (!waiver || waiver.ok !== true || waiver.hash !== highHash) {
+          return json(res, 409, { error: "交叉复核存在 high 问题，禁止生成最终报告",
+            crossReview: { high: review.high, issues: highIssues.slice(0, 8) },
+            waiverRequired: true, hint: "如需测试输出，可显式豁免交叉复核并填写理由" });
+        }
+        env.CROSS_REVIEW_WAIVED = "1";
+        crossWaiverUsed = waiver;
+      }
       // 3) 投资者版编译：先抽 claims，再生成面向投资者的结构，不直接使用内部 master。
       const bc = await runNode([path.join(ROOT, "scripts/build-claims.js"), "--case", caseId], env, 60000);
       let bcj = null; try { bcj = JSON.parse(String(bc.out || "").trim().split(String.fromCharCode(10)).pop()); } catch (e) {}
@@ -5995,6 +6007,8 @@ function ensureFinalReview(caseId, service, rel, version, requester) {
         claimEvidence: mej ? { claims: mej.claims, mapped: mej.mapped } : null,
         readability: rdj ? { ok: rdj.ok, chars: rdj.chars, figures: rdj.figures, bad: rdj.bad } : null,
         crossReview: review ? { high: review.high || 0, issues: (review.issues || []).length } : null,
+        crossReviewWaiver: crossWaiverUsed ? { by: crossWaiverUsed.by || "", at: crossWaiverUsed.at || "",
+          reason: crossWaiverUsed.reason || "", high: crossWaiverUsed.high || 0 } : null,
         reviews: (() => { const list = (reviews.get(caseId) || []).filter(r => r.path === "reports/final-report.docx" && (r.service === "audit" || r.service === "legal")); return list.map(r => ({ id: r.id, service: r.service, version: r.version, status: r.status })); })(),
         tone: tone ? { removedLabels: tone.removedLabels, semicolons: tone.semicolons } : null,
         dataFreshness: fresh, dataAsOf: fresh.items.length ? fresh.items.map(x => x.dataAsOf).sort().pop() : null };
@@ -6252,6 +6266,23 @@ function ensureFinalReview(caseId, service, rel, version, requester) {
       emit("semantic.waived", b.by || "you", { case: caseId, reason });
       return json(res, 200, { ok: true, waiver: reason });
     }
+    if (p === "/api/final/waive-cross-review" && req.method === "POST") {
+      const b = await readBody(req);
+      const caseId = b.case || "default";
+      const reason = String(b.reason || "").trim().slice(0, 500);
+      if (!reason) return json(res, 400, { error: "reason required" });
+      let review = null;
+      try { review = JSON.parse(fs.readFileSync(vaultPath(caseId, "research/cross-review.json"), "utf8")); } catch (e) {}
+      const highIssues = ((review && review.issues) || []).filter(x => x.severity === "high");
+      if (!highIssues.length) return json(res, 409, { error: "当前没有 high 交叉复核问题，无需豁免" });
+      const hash = sha256(JSON.stringify(highIssues.map(x => ({ type: x.type, from: x.from, to: x.to, message: x.message }))));
+      const p0 = vaultPath(caseId, "research/cross-review-waiver.json");
+      fs.mkdirSync(path.dirname(p0), { recursive: true });
+      fs.writeFileSync(p0, JSON.stringify({ case: caseId, ok: true, by: b.by || "you",
+        reason, high: highIssues.length, hash, at: new Date().toISOString() }, null, 2));
+      emit("cross_review.waived", b.by || "you", { case: caseId, reason, high: highIssues.length });
+      return json(res, 200, { ok: true, waiver: reason, high: highIssues.length });
+    }
     if (p === "/api/final/synthesis/retry" && req.method === "POST") {
       const b = await readBody(req);
       const caseId = b.case || "default";
@@ -6273,6 +6304,10 @@ function ensureFinalReview(caseId, service, rel, version, requester) {
       let crossReview = null;
       try { crossReview = JSON.parse(fs.readFileSync(vaultPath(caseId, "research/cross-review.json"), "utf8")); } catch (e) {}
       const crossHighIssues = ((crossReview && crossReview.issues) || []).filter(x => x.severity === "high");
+      let crossWaiver = null;
+      try { crossWaiver = JSON.parse(fs.readFileSync(vaultPath(caseId, "research/cross-review-waiver.json"), "utf8")); } catch (e) {}
+      const crossHash = sha256(JSON.stringify(crossHighIssues.map(x => ({ type: x.type, from: x.from, to: x.to, message: x.message }))));
+      const crossWaived = !!(crossWaiver && crossWaiver.ok === true && crossWaiver.hash === crossHash);
       const view = caseView.buildCaseView({
         caseId,
         plans: plans.get(caseId) || [],
@@ -6284,6 +6319,7 @@ function ensureFinalReview(caseId, service, rel, version, requester) {
         reportStale: !!(consistency && consistency.stale),
         staleReasons: (consistency && consistency.mismatches || []).map(x => x.path || x.field || String(x)).slice(0, 6),
         crossReviewHigh: crossHighIssues.length,
+        crossReviewWaived: crossWaived,
         crossReviewIssues: crossHighIssues.slice(0, 8).map(x => ({ type: x.type || "", from: x.from || "", to: x.to || "", message: x.message || "" })),
         revision: S.seq
       });
@@ -6336,6 +6372,10 @@ function ensureFinalReview(caseId, service, rel, version, requester) {
       const validation = readJson(path.join(baseR, "validation.json"));
       const briefCount = ["macro", "industry", "stock"].filter(a => exists(path.join(baseR, "brief-" + a + ".json"))).length;
       const review = readJson(path.join(baseR, "cross-review.json"));
+      const crossWaiver = readJson(path.join(baseR, "cross-review-waiver.json"));
+      const crossHighHash = review ? sha256(JSON.stringify((review.issues || []).filter(x => x.severity === "high")
+        .map(x => ({ type: x.type, from: x.from, to: x.to, message: x.message })))) : "";
+      const crossWaived = !!(crossWaiver && crossWaiver.ok === true && crossWaiver.hash === crossHighHash);
       const manifest = readJson(path.join(baseP, "final-manifest.json"));
       const stages = [
         { id: "evidence", label: "证据校验", status: validation ? (validation.high > 0 ? "failed" : "done") : "pending",
@@ -6346,8 +6386,9 @@ function ensureFinalReview(caseId, service, rel, version, requester) {
           detail: (() => { const c = readJson(path.join(baseR, "consistency.json")); return c ? ("冲突 " + ((c.issues || []).length)) : "未运行"; })() },
         { id: "evidence-dedup", label: "证据去重", status: (() => { const d = readJson(path.join(baseR, "evidence-duplicates.json")); return d ? "done" : "pending"; })(),
           detail: (() => { const d = readJson(path.join(baseR, "evidence-duplicates.json")); return d ? ("重复组 " + (d.duplicateGroups || 0)) : "未运行"; })() },
-        { id: "cross-review", label: "交叉复核", status: review ? (review.high > 0 ? "failed" : "done") : "pending",
-          detail: review ? ("high " + (review.high || 0) + " · issues " + ((review.issues || []).length)) : "未运行" },
+        { id: "cross-review", label: "交叉复核", status: review ? (review.high > 0 && !crossWaived ? "failed" : "done") : "pending",
+          detail: review ? ((crossWaived ? "已豁免 high " + (review.high || 0) + " · " : "") +
+            ("high " + (review.high || 0) + " · issues " + ((review.issues || []).length))) : "未运行" },
         { id: "semantic", label: "语义一致性", status: (() => { const s0 = readJson(path.join(baseR, "cross-review-semantic.json")); const w = readJson(path.join(baseR, "semantic-waiver.json")); return w ? "done" : (s0 ? (s0.ok === false ? "failed" : (s0.high > 0 ? "failed" : "done")) : "pending"); })(),
           detail: (() => { const s0 = readJson(path.join(baseR, "cross-review-semantic.json")); const w = readJson(path.join(baseR, "semantic-waiver.json")); return w ? ("已豁免：" + String(w.reason || "").slice(0, 60)) : (s0 ? (s0.ok === false ? String(s0.error || "模型未返回") : ("high " + (s0.high || 0) + " · issues " + ((s0.issues || []).length))) : "异步复核未完成"); })() },
         { id: "master", label: "主报告装配", status: exists(path.join(baseP, "master.md")) ? "done" : "pending", detail: "reports/master.md" },

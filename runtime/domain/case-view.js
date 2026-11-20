@@ -146,7 +146,7 @@ function nextAction(phase, input) {
   if (phase === "DATA_GAP") return { id: "fill_data", label: "去补数据", owner: "human", enabled: true };
   if (phase === "DRAFT_READY") return { id: "generate_report", label: "生成最终报告", owner: "system", enabled: true };
   if (phase === "REPORT_STALE") {
-    if (input.crossReview && input.crossReview.high > 0)
+    if (input.crossReview && input.crossReview.high > 0 && !input.crossReview.waived)
       return { id: "fix_cross_review", label: "查看交叉复核", owner: "human", enabled: true };
     return { id: "regenerate_report", label: "重新生成报告", owner: "system", enabled: true };
   }
@@ -184,7 +184,7 @@ function buildInbox(phase, input) {
   if (report.exists && report.stale) inbox.push({ id: "report:stale", type: "report", severity: "high",
     title: "报告已过期，需要重新生成", action: "regenerate_report",
     detail: (report.staleReasons || []).slice(0, 3).join("；") });
-  if (input.crossReview && input.crossReview.high > 0) inbox.push({
+  if (input.crossReview && input.crossReview.high > 0 && !input.crossReview.waived) inbox.push({
     id: "review:cross:high", type: "cross_review", severity: "high",
     title: "交叉复核 high " + input.crossReview.high + " 项", action: "fix_cross_review",
     detail: (input.crossReview.issues || []).slice(0, 3).map(x => x.message || x.type || "").join("；")
@@ -216,7 +216,8 @@ function buildCaseView(opts) {
   const report = reportSummary(caseDir, opts.reviews, opts.signatures, opts.finalExists);
   report.stale = !!opts.reportStale;
   report.staleReasons = opts.staleReasons || [];
-  const crossReview = { high: Number(opts.crossReviewHigh) || 0, issues: opts.crossReviewIssues || [] };
+  const crossReview = { high: Number(opts.crossReviewHigh) || 0, issues: opts.crossReviewIssues || [],
+    waived: !!opts.crossReviewWaived };
   const input = { plans: opts.plans || [], works: opts.works || [], needs: opts.needs || [],
     report, evidence, claims, briefs, crossReview };
   const phase = derivePhase(input);
@@ -239,6 +240,7 @@ function buildCaseView(opts) {
     },
     report: { exists: report.exists, audit: report.audit, legal: report.legal, stale: report.stale, signed: report.signed },
     crossReview: { high: (input.crossReview && input.crossReview.high) || 0,
+      waived: !!(input.crossReview && input.crossReview.waived),
       issues: (input.crossReview && input.crossReview.issues) || [] }
   };
   return { case: caseId, revision: opts.revision || 0, phase, phaseLabel: PHASE_LABEL[phase] || phase,
