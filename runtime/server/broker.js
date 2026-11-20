@@ -46,6 +46,7 @@ const dataQuality = require(path.join(CODE_ROOT, "scripts/data-quality.js"));
 const dataTask = require(path.join(CODE_ROOT, "scripts/datatask.js"));
 const toolGateway = require(path.join(CODE_ROOT, "scripts/tool-gateway.js"));
 const caseIntent = require(path.join(CODE_ROOT, "scripts/case-intent.js"));
+const caseView = require(path.join(CODE_ROOT, "runtime/domain/case-view.js"));
 const ALIAS_FILE = path.join(ROOT, "runtime/metric-aliases.json");
 function loadAliasProposals() {
   try { return JSON.parse(fs.readFileSync(ALIAS_FILE, "utf8")); } catch (e) { return []; }
@@ -160,6 +161,7 @@ const deletedCases = new Set(); // 已删除的 case（进回收站，可恢复�
 const trash = new Map();        // caseId -> { trash: 相对路径, at, files }
 const usage = new Map();        // caseId -> { agent: { input, output, cacheRead, total, runs, lastMs } }
 const reviews = new Map(); // caseId -> [review]  复核服务：一次服务 = (产物路径, 版本, audit|legal)
+const leadLeases = new Map(); // caseId -> { loopId, until, pid }  单 case 只能有一个 active Lead
 let reviewSeq = 0;
 /* ---------------------------------------------------------------- 配置与目录发现
  * 开源版：角色名单、默认模型、每员工默认技能、案例默认角色都从 config/desk.json 读；
@@ -1951,6 +1953,13 @@ const server = http.createServer(async (req, res) => {
           tokens: caseTokens.get(caseId) || 0, limit: BUDGETS.maxTokensPerCase });
       }
       const kind = b.kind === "lead" ? "lead" : "employee";
+      if (kind === "lead") {
+        const cur = leadLeases.get(caseId);
+        if (cur && Number(cur.until) > Date.now()) {
+          return json(res, 409, { error: "Lead 循环已在运行", code: "lead_lease_held",
+            loopId: cur.loopId, until: cur.until, hint: "等待当前 Lead 完成，或停止后重试" });
+        }
+      }
       const agent = String(b.agent || (kind === "lead" ? "lead" : "industry")).slice(0, 20);
       const task = String(b.task || b.objective || "").slice(0, 4000);
       const workId = String(b.workId || "").slice(0, 40);
@@ -1968,6 +1977,7 @@ const server = http.createServer(async (req, res) => {
         "--loop-id", loopId];
       if (kind === "lead") {
         args.push("--objective", task || "完成 case 研究并产出可审阅报告");
+        args.push("--lease-id", loopId);
         if (["workflow", "supervised", "autonomous"].indexOf(b.autonomy) >= 0) args.push("--autonomy", b.autonomy);
       }
       else {
@@ -1976,14 +1986,39 @@ const server = http.createServer(async (req, res) => {
       }
       const dir = path.join(ROOT, "runtime/agent-loops"); fs.mkdirSync(dir, { recursive: true });
       const fd = fs.openSync(path.join(dir, loopId + ".log"), "a");
+      let childPid = 0;
+      // 先占租约再启动，避免子进程快速完成并发 release 时出现“先 release 后 set”的竞态。
+      if (kind === "lead") leadLeases.set(caseId, { loopId, pid: 0, until: Date.now() + 120000 });
       try {
         const cp = spawn(process.execPath, args, { cwd: ROOT, detached: true, stdio: ["ignore", fd, fd],
           env: Object.assign({}, process.env, { DESK_BROKER: "http://127.0.0.1:" + PORT }) });
-        cp.unref();
-      } catch (e) { try { fs.closeSync(fd); } catch (e2) {} return json(res, 500, { error: String((e && e.message) || e) }); }
+        cp.unref(); childPid = cp.pid || 0;
+      } catch (e) { try { fs.closeSync(fd); } catch (e2) {} if (kind === "lead") leadLeases.delete(caseId); return json(res, 500, { error: String((e && e.message) || e) }); }
       try { fs.closeSync(fd); } catch (e) {}
+      if (kind === "lead") {
+        const cur = leadLeases.get(caseId);
+        if (cur && cur.loopId === loopId) { cur.pid = childPid; leadLeases.set(caseId, cur); }
+      }
       emit("agent.loop.queued", b.by || "you", { case: caseId, loopId, kind, agent, mode, maxRounds });
       return json(res, 200, { ok: true, loopId, kind, agent, mode, maxRounds });
+    }
+    if (p === "/api/agent/loop/heartbeat" && req.method === "POST") {
+      const b = await readBody(req);
+      const caseId = String(b.case || "default").slice(0, 80);
+      const loopId = String(b.loopId || "").slice(0, 60);
+      const cur = leadLeases.get(caseId);
+      if (!cur || cur.loopId !== loopId) return json(res, 409, { error: "lead lease not held", code: "lead_lease_lost" });
+      cur.until = Date.now() + 120000;
+      leadLeases.set(caseId, cur);
+      return json(res, 200, { ok: true, until: cur.until });
+    }
+    if (p === "/api/agent/loop/release" && req.method === "POST") {
+      const b = await readBody(req);
+      const caseId = String(b.case || "default").slice(0, 80);
+      const loopId = String(b.loopId || "").slice(0, 60);
+      const cur = leadLeases.get(caseId);
+      if (cur && cur.loopId === loopId) leadLeases.delete(caseId);
+      return json(res, 200, { ok: true });
     }
     if (p === "/api/agent/loop/replay" && req.method === "POST") {
       const b = await readBody(req);
@@ -6178,6 +6213,21 @@ function ensureFinalReview(caseId, service, rel, version, requester) {
       child.unref(); try { fs.closeSync(fd); } catch (e) {}
       emit("final.synthesis.queued", "you", { case: caseId, retry: true });
       return json(res, 200, { ok: true, queued: true });
+    }
+    if (p === "/api/case/view" && req.method === "GET") {
+      const caseId = u.searchParams.get("case") || "default";
+      const finalExists = fs.existsSync(vaultPath(caseId, "reports/final-report.docx"));
+      const view = caseView.buildCaseView({
+        caseId,
+        plans: plans.get(caseId) || [],
+        works: works.get(caseId) || [],
+        needs: needs.get(caseId) || [],
+        reviews: reviews.get(caseId) || [],
+        signatures: reportSignatures.get(caseId) || {},
+        finalExists,
+        revision: S.seq
+      });
+      return json(res, 200, view);
     }
     if (p === "/api/final/status" && req.method === "GET") {
       const caseId = u.searchParams.get("case") || "default";

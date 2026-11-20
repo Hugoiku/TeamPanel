@@ -890,6 +890,7 @@ button.primary{background:#2563eb;border-color:#2563eb;color:#fff}
       <div class="colhead">团队 <span class="spacer"></span><span class="badge" id="laneBadge">0 运行中</span></div>
       <div class="scrolly" id="leftScroll">
         <div id="staffHead"></div>
+        <div id="caseViewBanner" class="nextstepbanner" style="display:none"></div>
         <div id="nextStepBanner" class="nextstepbanner"></div>
         <div class="stafflist" id="staffList"></div>
         <div class="colhead" style="border-top:1px solid var(--line)">待你处理 <span class="spacer"></span><span class="badge" id="inboxBadge">0</span></div>
@@ -5634,8 +5635,37 @@ button.primary{background:#2563eb;border-color:#2563eb;color:#fff}
       var rows = el.querySelectorAll("[data-evidence-id]"); for (var i=0;i<rows.length;i++) (function(row){ row.onclick = function(){ fetch(API+"/api/evidence?case="+encodeURIComponent(CASE_ID)).then(function(r){return r.json();}).then(function(jj){ var x=(jj.items||[]).filter(function(z){return z.id===row.getAttribute("data-evidence-id");})[0]; if(!x)return; if($("evidenceTitle"))$("evidenceTitle").textContent="证据 "+x.id; setHTML($("evidenceBody"), '<div style="font-size:10px;color:#64748b">'+esc(x.field||"")+'</div>' + (x.superseded ? '<div style="font-size:10px;color:#b45309;margin-top:4px">已替代'+(x.supersededBy?' → '+esc(x.supersededBy):'')+' · '+esc(x.supersedeReason||'')+'</div>' : '') + '<div style="font-size:11px;color:#334155;line-height:1.6;margin:6px 0;word-break:break-word">'+esc(x.value||"")+'</div><div style="font-size:9.5px;color:#94a3b8;word-break:break-all">'+esc(x.url||"")+' · '+esc(x.fetchedAt||"")+' · '+esc(x.tier||"")+'</div>'); $("evidenceMask").style.display="flex"; }); }; })(rows[i]);
     }).catch(function(){});
   }
+  var liveCaseView = null;
+  function renderCaseView() {
+    var el = $("caseViewBanner"); if (!el) return;
+    fetch(API + "/api/case/view?case=" + encodeURIComponent(CASE_ID))
+      .then(function (r) { return r.json(); })
+      .then(function (v) {
+        if (!v || v.error) return;
+        liveCaseView = v;
+        var old = $("nextStepBanner"); if (old) old.style.display = "none";
+        var act = v.primaryAction || {};
+        var q = v.quality || {};
+        var h = '<div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">' +
+          '<b>现在：' + esc(v.phaseLabel || v.phase || "") + '</b>' +
+          '<span style="color:#64748b;font-size:10px">' + esc((v.blocking || []).length ? ("阻塞 " + v.blocking.length + " 项") : "无高优先级阻塞") + '</span>' +
+          '<span style="flex:1"></span>' +
+          (act.id && act.id !== "wait" ? '<button class="primary" data-case-action="' + esc(act.id) + '"' + (act.enabled === false ? ' disabled style="opacity:.6"' : '') + '>' + esc(act.label || act.id) + '</button>' : '<span style="font-size:10px;color:#64748b">' + esc(act.label || "等待系统") + '</span>') +
+          '</div>' +
+          '<div style="font-size:9.5px;color:#64748b;margin-top:4px">证据 ' + ((q.evidence && q.evidence.verified) || 0) + '/' + ((q.evidence && q.evidence.total) || 0) +
+          ' · claim ' + ((q.claims && q.claims.mapped) || 0) + '/' + ((q.claims && q.claims.total) || 0) +
+          ' · brief ' + ((q.briefs && q.briefs.complete) || 0) + '/' + ((q.briefs && q.briefs.total) || 0) +
+          (q.report && q.report.exists ? (' · 报告 ' + (q.report.signed ? "已签发" : "待复核/签发")) : '') + '</div>';
+        var high = (v.blocking || []).slice(0, 2);
+        if (high.length) h += '<div style="margin-top:3px;font-size:9px;color:#b45309">' + high.map(function (x) { return esc(x.title || ""); }).join("；") + '</div>';
+        el.innerHTML = h;
+        el.style.display = "flex";
+      }).catch(function () {});
+  }
   function renderNextStep() {
     var el = $("nextStepBanner"); if (!el) return;
+    if (liveCaseView) { el.style.display = "none"; return; }
+
     Promise.all([
       fetch(API + "/api/final/status?case=" + encodeURIComponent(CASE_ID)).then(function (r) { return r.json(); }),
       fetch(API + "/api/conflicts?case=" + encodeURIComponent(CASE_ID)).then(function (r) { return r.json(); }),
@@ -6305,7 +6335,7 @@ button.primary{background:#2563eb;border-color:#2563eb;color:#fff}
       setHTML(el,h); applyMidTab();
     }).catch(function(){});
   }
-  function render() { renderHeader(); renderSetupBanner(); renderAlerts(); renderStaff(); renderInbox(); renderLeft(); renderPending(); renderPendingDetail(); renderDeliverables(); renderUploads(); renderPlans(); renderMid(); renderGraph(); renderModelStrip(); renderLocks(); renderNextStep(); renderInvestorDash(); renderDataReview(); renderAliasReview(); renderMetricDrafts(); renderEvidence(); renderConflicts(); renderFinalPipeline(); renderAsyncJobs(); renderRightDeliverables(); renderDataJobs(); renderDataTasks(); renderModelBar(); renderTaskSummary(); renderCompletion(); renderIntakeDecision(); renderIssueNav(); setTimeout(renderIssueNav, 400); setTimeout(renderIssueNav, 1200); setTimeout(renderModelLinks, 80);
+  function render() { renderHeader(); renderSetupBanner(); renderAlerts(); renderStaff(); renderInbox(); renderLeft(); renderPending(); renderPendingDetail(); renderDeliverables(); renderUploads(); renderPlans(); renderMid(); renderGraph(); renderModelStrip(); renderLocks(); renderCaseView(); renderNextStep(); renderInvestorDash(); renderDataReview(); renderAliasReview(); renderMetricDrafts(); renderEvidence(); renderConflicts(); renderFinalPipeline(); renderAsyncJobs(); renderRightDeliverables(); renderDataJobs(); renderDataTasks(); renderModelBar(); renderTaskSummary(); renderCompletion(); renderIntakeDecision(); renderIssueNav(); setTimeout(renderIssueNav, 400); setTimeout(renderIssueNav, 1200); setTimeout(renderModelLinks, 80);
     var sm = $("setMask"); if (sm && sm.style.display !== "none") renderSettings();
     var cm = $("caseMask"); if (cm && cm.style.display !== "none") renderCaseModal();
     var tm = $("taskMask"); if (tm && tm.style.display !== "none") renderTaskModal();
@@ -7224,6 +7254,8 @@ button.primary{background:#2563eb;border-color:#2563eb;color:#fff}
           '<span style="color:#94a3b8">第 ' + (l.rounds || 0) + '/' + (l.maxRounds || 0) + ' 轮 · ' + esc(l.mode || "") +
             (l.autonomy ? ' · ' + esc(l.autonomy) : '') +
             (l.workId ? ' · ' + esc(l.workId) : '') +
+            (l.failureKind ? ' · ' + esc(l.failureKind) : '') +
+            (l.recovery ? ' · 恢复：' + esc(l.recovery) : '') +
             (l.gate ? (l.gate.ok ? ' · 门禁通过' : ' · 门禁失败') : '') +
             (l.usage ? ' · token ' + (l.usage.tokens || 0) + (l.budget && l.budget.maxTokens ? '/' + l.budget.maxTokens : '') : '') +
             (l.usage && l.usage.subagents ? ' · 子代理 ' + l.usage.subagents : '') + '</span>' +
@@ -7916,6 +7948,58 @@ button.primary{background:#2563eb;border-color:#2563eb;color:#fff}
         .catch(function (e) { toast("豁免失败：" + (e && e.message || e)); });
       return;
     }
+    function resumeExecution() {
+      fetch(API + "/api/work?case=" + encodeURIComponent(CASE_ID)).then(function (r) { return r.json(); })
+        .then(function (wj) {
+          var failed = ((wj && wj.items) || []).filter(function (w) { return w.state === "failed" || w.state === "cancelled"; });
+          var retryable = failed.filter(function (w) { return w.state === "cancelled" || !w.recovery || w.recovery.action !== "split"; });
+          return Promise.all(retryable.map(function (w) {
+            return fetch(API + "/api/work/recover", { method: "POST", headers: { "content-type": "application/json" },
+              body: JSON.stringify({ case: CASE_ID, id: w.id, action: "retry", by: "you" }) }).catch(function () {});
+          })).then(function () { return { failed: failed, retried: retryable.length }; });
+        }).then(function (info) {
+          return fetch(API + "/api/plan/resume", { method: "POST", headers: { "content-type": "application/json" },
+            body: JSON.stringify({ case: CASE_ID, trigger: "manual-resume", by: "you" }) }).then(function (r) { return r.json(); })
+            .then(function (j) { return { info: info, j: j }; });
+        }).then(function (x) {
+          var j = x.j || {};
+          if (j.error) { toast("继续执行失败：" + j.error); return; }
+          var n = (j.runs || []).filter(function (y) { return y.run && y.run.pid; }).length;
+          var extra = x.info.retried ? ("，先重试 " + x.info.retried + " 个失败节点") : "";
+          toast(n ? ("已继续执行 " + n + " 个计划" + extra) : ("没有可启动计划" + extra));
+          livePoll();
+        }).catch(function (e) { toast("继续执行失败：" + (e && e.message || e)); });
+    }
+    if (t.closest("[data-case-action]")) {
+      var ca = t.getAttribute("data-case-action");
+      if (ca === "create_plan") { var fan = $("btnFanout"); if (fan) fan.click(); return; }
+      if (ca === "approve_plan" || ca === "fill_data") {
+        pendingOpen = true; livePoll();
+        try { var pb0 = $("pendingBox"); if (pb0) pb0.scrollIntoView({ behavior: "smooth", block: "center" }); } catch (e) {}
+        return;
+      }
+      if (ca === "start_execution") {
+        var pls0 = (livePlans || []).filter(function (p) { return p.status === "approved"; });
+        if (!pls0.length) { toast("没有已批准计划"); return; }
+        preflightAndStartPlans(pls0, "已启动"); return;
+      }
+      if (ca === "continue_execution") { resumeExecution(); return; }
+      if (ca === "generate_report") {
+        fetch(API + "/api/report/final", { method: "POST", headers: { "content-type": "application/json" },
+          body: JSON.stringify({ case: CASE_ID, by: "you" }) }).then(function (r) { return r.json(); })
+          .then(function (j) { toast(j.error ? ("最终报告失败：" + j.error) : "最终报告已生成"); livePoll(); })
+          .catch(function (e) { toast("生成失败：" + (e && e.message || e)); });
+        return;
+      }
+      if (ca === "wait_review" || ca === "fix_review" || ca === "verify_report") {
+        var cb = $("finalPipelineBox");
+        if (cb) { cb.open = true; var p1 = cb.parentElement; while (p1) { if (p1.tagName === "DETAILS") p1.open = true; p1 = p1.parentElement; } try { cb.scrollIntoView({ behavior: "smooth", block: "center" }); } catch (e) {} }
+        return;
+      }
+      if (ca === "sign_report") { var sb = $("btnSign"); if (sb) sb.click(); return; }
+      if (ca === "inspect_evidence") { var eb = $("evidenceBox"); if (eb) { eb.open = true; try { eb.scrollIntoView({ behavior: "smooth", block: "center" }); } catch (e) {} } return; }
+      return;
+    }
     if (t.closest("[data-next-step]")) {
       var ns = t.getAttribute("data-next-step");
       if (ns === "run-plans") {
@@ -7929,29 +8013,7 @@ button.primary{background:#2563eb;border-color:#2563eb;color:#fff}
       if (fr) fr.click();
       return;
     }
-    if (ns === "run-resume") {
-        fetch(API + "/api/work?case=" + encodeURIComponent(CASE_ID)).then(function (r) { return r.json(); })
-          .then(function (wj) {
-            var failed = ((wj && wj.items) || []).filter(function (w) { return w.state === "failed" || w.state === "cancelled"; });
-            var retryable = failed.filter(function (w) { return w.state === "cancelled" || !w.recovery || w.recovery.action !== "split"; });
-            return Promise.all(retryable.map(function (w) {
-              return fetch(API + "/api/work/recover", { method: "POST", headers: { "content-type": "application/json" },
-                body: JSON.stringify({ case: CASE_ID, id: w.id, action: "retry", by: "you" }) }).catch(function () {});
-            })).then(function () { return { failed: failed, retried: retryable.length }; });
-          }).then(function (info) {
-            return fetch(API + "/api/plan/resume", { method: "POST", headers: { "content-type": "application/json" },
-              body: JSON.stringify({ case: CASE_ID, trigger: "manual-resume", by: "you" }) }).then(function (r) { return r.json(); })
-              .then(function (j) { return { info: info, j: j }; });
-          }).then(function (x) {
-            var j = x.j || {};
-            if (j.error) { toast("继续执行失败：" + j.error); return; }
-            var n = (j.runs || []).filter(function (y) { return y.run && y.run.pid; }).length;
-            var extra = x.info.retried ? ("，先重试 " + x.info.retried + " 个失败节点") : "";
-            toast(n ? ("已继续执行 " + n + " 个计划" + extra) : ("没有可启动计划" + extra));
-            livePoll();
-          }).catch(function (e) { toast("继续执行失败：" + (e && e.message || e)); });
-        return;
-      }
+    if (ns === "run-resume") { resumeExecution(); return; }
       if (ns === "rebuild") {
         fetch(API + "/api/report/final", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ case: CASE_ID, by: "you" }) })
           .then(function (r) { return r.json(); }).then(function (j) { toast(j.ok ? "报告已重新生成" : ("生成失败：" + (j.error || ""))); livePoll(); })

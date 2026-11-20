@@ -123,6 +123,7 @@ async function activeWork(caseId) {
   const maxWallMs = Math.max(1000, parseInt(arg("max-wall-ms", String(40 * 60 * 1000)), 10) || 40 * 60 * 1000);
   const fakeDecisionRaw = arg("fake-decision", "");
   const replayOf = arg("replay-of", "");
+  const leaseId = arg("lease-id", "");
   const autonomy = String(arg("autonomy", (DESK_CFG.autonomy && DESK_CFG.autonomy.mode) || "supervised"));
   const started = Date.now();
   const id = arg("loop-id", "") || lib.loopId("lead");
@@ -133,6 +134,18 @@ async function activeWork(caseId) {
     usage: { tokens: 0, toolCalls: 0, wallMs: 0 },
     createdAt: new Date().toISOString() };
   lib.writeState(state);
+  let leaseTimer = null;
+  if (leaseId) {
+    const beat = async () => {
+      try {
+        const r = await lib.api("POST", "/api/agent/loop/heartbeat", { case: caseId, loopId: id });
+        if (r.status === 409) lib.appendTrace(state, "lease.lost", "Lead lease 已丢失");
+      } catch (e) { lib.appendTrace(state, "lease.heartbeat_error", String((e && e.message) || e)); }
+    };
+    leaseTimer = setInterval(beat, 30000);
+    if (leaseTimer.unref) leaseTimer.unref();
+    beat();
+  }
   async function note(action, ok, detail, extra) {
     const rec = Object.assign({ round: state.rounds, action, ok: !!ok, detail: String(detail || "").slice(0, 600),
       at: new Date().toISOString() }, extra || {});
@@ -170,8 +183,12 @@ async function activeWork(caseId) {
         if (fakeDecisionRaw) { try { decision = JSON.parse(fakeDecisionRaw); } catch (e) {} }
       } else {
         const prompt = decisionPrompt(caseId, objective, round, maxRounds, obs);
-        const r = await runtimeApi.run(runtimeName, "lead", caseId, prompt, id + "-r" + round);
-        if (!r.ok) { state.status = "failed"; state.error = String(r.error || (r.stderr || "").slice(-500) || "lead run failed");
+        let r = await runtimeApi.run(runtimeName, "lead", caseId, prompt, id + "-r" + round);
+        if (!r.ok) {
+          lib.appendTrace(state, "model.retry", "Lead 模型调用失败，重试一次");
+          r = await runtimeApi.run(runtimeName, "lead", caseId, prompt, id + "-r" + round + "-retry");
+        }
+        if (!r.ok) { state.status = "failed"; state.failureKind = "runtime_unavailable"; state.recovery = "fallback_runtime"; state.error = String(r.error || (r.stderr || "").slice(-500) || "lead run failed");
           lib.appendTrace(state, "round.failed", state.error);
           await lib.emit("agent.loop.failed", "lead", { case: caseId, loopId: id, round, error: state.error }); break; }
         const emp = r.employee || {};
@@ -357,12 +374,22 @@ async function activeWork(caseId) {
     state.status = "failed"; state.error = String((e && e.message) || e);
     lib.appendTrace(state, "exception", state.error);
   }
+  if (state.status === "failed" && !state.failureKind) {
+    const err = String(state.error || "");
+    if (/token|budget|预算/i.test(err)) { state.failureKind = "budget_exceeded"; state.recovery = "stop"; }
+    else if (/parse|json|决策|contract/i.test(err)) { state.failureKind = "invalid_decision"; state.recovery = "repair_decision"; }
+    else if (/timeout|timed out|empty|无返回/i.test(err)) { state.failureKind = "model_timeout"; state.recovery = "retry_round"; }
+    else { state.failureKind = "action_failed"; state.recovery = "ask_human"; }
+  }
   state.usage.wallMs = Date.now() - started;
+  if (leaseTimer) clearInterval(leaseTimer);
+  if (leaseId) { try { await lib.api("POST", "/api/agent/loop/release", { case: caseId, loopId: id }); } catch (e) {} }
   lib.appendTrace(state, "finished", state.status);
   lib.writeState(state);
   await lib.emit(state.status === "failed" ? "agent.loop.failed" : "agent.loop.finished", "lead",
     { case: caseId, loopId: id, kind: "lead", status: state.status, rounds: state.rounds,
-      decision: state.decision, actions: state.actions, usage: state.usage, error: state.error || "" });
+      decision: state.decision, actions: state.actions, usage: state.usage, error: state.error || "",
+      failureKind: state.failureKind || "", recovery: state.recovery || "" });
   const ok = state.status === "done";
   console.log(JSON.stringify({ ok, loopId: id, status: state.status, rounds: state.rounds,
     decision: state.decision, actions: state.actions, usage: state.usage, error: state.error || "" }, null, 2));

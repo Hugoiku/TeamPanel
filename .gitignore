@@ -7,6 +7,9 @@
 runtime/*
 !runtime/server/
 !runtime/agents/
+!runtime/domain/
+runtime/domain/*
+!runtime/domain/case-view.js
 runtime/server/*
 !runtime/server/broker.js
 !runtime/server/test/
