@@ -6292,6 +6292,10 @@ function ensureFinalReview(caseId, service, rel, version, requester) {
         counts: { total: d.total, verified: d.verified, unverified: d.unverified, conflict: d.conflict, stale: d.stale, superseded: d.superseded },
         items: d.items.slice(-200) });
     }
+    if (p === "/api/knowledge/view" && req.method === "GET") {
+      const caseId = u.searchParams.get("case") || "default";
+      return json(res, 200, caseView.knowledgeView(caseId, ROOT));
+    }
     if (p === "/api/final/status" && req.method === "GET") {
       const caseId = u.searchParams.get("case") || "default";
       const baseR = vaultPath(caseId, "research");

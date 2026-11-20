@@ -953,6 +953,7 @@ button.primary{background:#2563eb;border-color:#2563eb;color:#fff}
         <details class="lockbox opsub" id="qualityBox"><summary>报告质量 <span id="qualityCount" class="sub"></span></summary><div class="locks" id="qualityList"></div></details>
         <details class="lockbox opsub" id="claimBox"><summary>论点映射 <span id="claimCount" class="sub"></span></summary><div class="locks" id="claimList"></div></details>
         <details class="lockbox opsub" id="briefBox"><summary>Brief 完整性 <span id="briefCount" class="sub"></span></summary><div class="locks" id="briefList"></div></details>
+        <details class="lockbox opsub" id="knowledgeBox"><summary>知识视图 <span id="knowledgeCount" class="sub"></span></summary><div class="locks" id="knowledgeList"></div></details>
         <details class="lockbox opsub" id="evidenceBox"><summary>证据索引 <span id="evidenceCount" class="sub"></span></summary><div class="locks" id="evidenceList"></div></details>
       </div></details>
       <details class="lockbox groupbox" id="execGroupBox"><summary>执行与运维 <span class="sub">循环 / 交付 / 任务</span></summary><div class="locks">
@@ -5683,6 +5684,11 @@ button.primary{background:#2563eb;border-color:#2563eb;color:#fff}
       h += row("共享 Brief", (b.complete || 0) + "/" + (b.total || 0), (b.complete === b.total ? "#059669" : "#b45309"));
       var gp = q.gaps || {};
       h += row("数据缺口", (gp.open || 0) + " 待补 · " + (gp.partial || 0) + " 部分 · " + (gp.waived || 0) + " 豁免", (gp.open || gp.partial) ? "#b45309" : "#059669");
+      if ((gp.items || []).length) {
+        h += '<div style="margin-top:4px"><button class="skbtn" data-case-action="inspect_gaps" style="font-size:9px;padding:1px 6px">查看缺口明细</button></div>';
+        var gi = gp.items.slice(-2).map(function (x) { return esc(x.title || x.id || ""); }).join("；");
+        if (gi) h += '<div style="font-size:9px;color:#94a3b8;margin-top:2px">' + gi + '</div>';
+      }
       h += row("报告", rp.exists ? (rp.signed ? "已签发" : "待复核/签发") : "未生成", rp.exists ? "#334155" : "#b45309");
       if (issues.length) h += '<div style="font-size:9px;color:#b45309;margin-top:4px">' + issues.slice(0, 4).map(function (x) { return esc(x.title || ""); }).join("<br>") + '</div>';
       setHTML(el, h);
@@ -5694,7 +5700,7 @@ button.primary{background:#2563eb;border-color:#2563eb;color:#fff}
       var items = (j && j.items) || [], c = (j && j.counts) || {};
       if (cnt) cnt.textContent = (c.mapped || 0) + "/" + (c.total || 0);
       var h = items.map(function (x) {
-        return '<div class="drow" style="font-size:9.5px"><b>' + esc(x.id) + '</b> ' +
+        return '<div class="drow" data-claim-id="' + esc(x.id) + '" style="cursor:pointer;font-size:9.5px"><b>' + esc(x.id) + '</b> ' +
           '<span style="color:' + (x.mapped ? "#059669" : "#b45309") + '">' + (x.mapped ? "已映射" : "未映射") + '</span> · ' +
           esc(String(x.text || "").slice(0, 70)) + (x.refs && x.refs.length ? ' <span style="color:#94a3b8">' + esc(x.refs.join(",")) + '</span>' : '') + '</div>';
       }).join("");
@@ -5709,12 +5715,30 @@ button.primary{background:#2563eb;border-color:#2563eb;color:#fff}
       var label = { complete: "完整", partial: "不完整", empty: "空", missing: "缺失" };
       var col = { complete: "#059669", partial: "#b45309", empty: "#dc2626", missing: "#dc2626" };
       var h = items.map(function (x) {
-        return '<div class="drow" style="font-size:9.5px"><b>' + esc(x.agent) + '</b> ' +
+        return '<div class="drow" data-brief-agent="' + esc(x.agent) + '" style="cursor:pointer;font-size:9.5px"><b>' + esc(x.agent) + '</b> ' +
           '<span style="color:' + (col[x.status] || "#64748b") + '">' + esc(label[x.status] || x.status) + '</span> · stance ' +
           esc(x.stance || "-") + ' · claims ' + (x.claims || 0) + ' · assumptions ' + (x.assumptions || 0) + '</div>';
       }).join("");
       setHTML(el, h || '<div class="empty" style="padding:4px 0">暂无 Brief</div>');
     }).catch(function () {});
+  }
+  function renderKnowledgeView() {
+    var el = $("knowledgeList"), cnt = $("knowledgeCount"); if (!el) return;
+    fetch(API + "/api/knowledge/view?case=" + encodeURIComponent(CASE_ID)).then(function (r) { return r.json(); }).then(function (j) {
+      var entries = (j && j.entries) || [];
+      if (cnt) cnt.textContent = String(entries.length || "");
+      var h = entries.slice(-80).reverse().map(function (x) {
+        var c = x.status === "verified" || x.status === "mapped" ? "#059669" : (x.status === "conflict" ? "#dc2626" : "#b45309");
+        return '<div class="drow" data-knowledge-id="' + esc(x.id) + '" style="cursor:pointer;font-size:9.5px"><b>' + esc(x.id) + '</b> ' +
+          '<span style="color:' + c + '">' + esc(x.status) + '</span> · ' + esc(String(x.title || "").slice(0, 64)) + '</div>';
+      }).join("");
+      setHTML(el, h || '<div class="empty" style="padding:4px 0">暂无知识条目</div>');
+    }).catch(function () {});
+  }
+  function showInfoDetail(title, html) {
+    if ($("evidenceTitle")) $("evidenceTitle").textContent = title;
+    setHTML($("evidenceBody"), html);
+    if ($("evidenceMask")) $("evidenceMask").style.display = "flex";
   }
   var liveCaseView = null;
   function renderCaseView() {
@@ -6416,7 +6440,7 @@ button.primary{background:#2563eb;border-color:#2563eb;color:#fff}
       setHTML(el,h); applyMidTab();
     }).catch(function(){});
   }
-  function render() { renderHeader(); renderSetupBanner(); renderAlerts(); renderStaff(); renderInbox(); renderLeft(); renderPending(); renderPendingDetail(); renderDeliverables(); renderUploads(); renderPlans(); renderMid(); renderGraph(); renderModelStrip(); renderLocks(); renderCaseView(); renderQuality(); renderClaimObjects(); renderBriefObjects(); renderNextStep(); renderInvestorDash(); renderDataReview(); renderAliasReview(); renderMetricDrafts(); renderEvidence(); renderConflicts(); renderFinalPipeline(); renderAsyncJobs(); renderRightDeliverables(); renderDataJobs(); renderDataTasks(); renderModelBar(); renderTaskSummary(); renderCompletion(); renderIntakeDecision(); renderIssueNav(); setTimeout(renderIssueNav, 400); setTimeout(renderIssueNav, 1200); setTimeout(renderModelLinks, 80);
+  function render() { renderHeader(); renderSetupBanner(); renderAlerts(); renderStaff(); renderInbox(); renderLeft(); renderPending(); renderPendingDetail(); renderDeliverables(); renderUploads(); renderPlans(); renderMid(); renderGraph(); renderModelStrip(); renderLocks(); renderCaseView(); renderQuality(); renderClaimObjects(); renderBriefObjects(); renderKnowledgeView(); renderNextStep(); renderInvestorDash(); renderDataReview(); renderAliasReview(); renderMetricDrafts(); renderEvidence(); renderConflicts(); renderFinalPipeline(); renderAsyncJobs(); renderRightDeliverables(); renderDataJobs(); renderDataTasks(); renderModelBar(); renderTaskSummary(); renderCompletion(); renderIntakeDecision(); renderIssueNav(); setTimeout(renderIssueNav, 400); setTimeout(renderIssueNav, 1200); setTimeout(renderModelLinks, 80);
     var sm = $("setMask"); if (sm && sm.style.display !== "none") renderSettings();
     var cm = $("caseMask"); if (cm && cm.style.display !== "none") renderCaseModal();
     var tm = $("taskMask"); if (tm && tm.style.display !== "none") renderTaskModal();
@@ -8053,9 +8077,52 @@ button.primary{background:#2563eb;border-color:#2563eb;color:#fff}
           livePoll();
         }).catch(function (e) { toast("继续执行失败：" + (e && e.message || e)); });
     }
+    if (t.closest("[data-claim-id]")) {
+      var cid = t.getAttribute("data-claim-id");
+      fetch(API + "/api/case/objects?case=" + encodeURIComponent(CASE_ID) + "&type=claim").then(function (r) { return r.json(); }).then(function (j) {
+        var x = ((j && j.items) || []).filter(function (z) { return z.id === cid; })[0]; if (!x) return;
+        showInfoDetail("Claim " + x.id, '<div style="font-size:10px;color:' + (x.mapped ? "#059669" : "#b45309") + '">' + (x.mapped ? "已映射" : "未映射") + '</div>' +
+          '<div style="font-size:11px;color:#334155;line-height:1.7;margin:6px 0">' + esc(x.text || "") + '</div>' +
+          '<div style="font-size:9.5px;color:#94a3b8">证据：' + esc((x.refs || []).join(",") || "无") + '</div>');
+      });
+      return;
+    }
+    if (t.closest("[data-brief-agent]")) {
+      var bag = t.getAttribute("data-brief-agent");
+      fetch(API + "/api/case/objects?case=" + encodeURIComponent(CASE_ID) + "&type=brief").then(function (r) { return r.json(); }).then(function (j) {
+        var x = ((j && j.items) || []).filter(function (z) { return z.agent === bag; })[0]; if (!x) return;
+        showInfoDetail("Brief " + x.agent, '<div style="font-size:10px;color:#64748b">状态：' + esc(x.status) + '</div>' +
+          '<div style="font-size:11px;color:#334155;line-height:1.7;margin:6px 0">stance：' + esc(x.stance || "-") + '</div>' +
+          '<div style="font-size:9.5px;color:#94a3b8">claims ' + (x.claims || 0) + ' · assumptions ' + (x.assumptions || 0) + '</div>');
+      });
+      return;
+    }
+    if (t.closest("[data-knowledge-id]")) {
+      var kid = t.getAttribute("data-knowledge-id");
+      fetch(API + "/api/knowledge/view?case=" + encodeURIComponent(CASE_ID)).then(function (r) { return r.json(); }).then(function (j) {
+        var x = ((j && j.entries) || []).filter(function (z) { return z.id === kid; })[0]; if (!x) return;
+        showInfoDetail((x.type === "claim" ? "Claim " : "证据 ") + x.id, '<div style="font-size:10px;color:' + (x.status === "verified" || x.status === "mapped" ? "#059669" : "#b45309") + '">' + esc(x.status) + '</div>' +
+          '<div style="font-size:11px;color:#334155;line-height:1.7;margin:6px 0;word-break:break-word">' + esc(x.value || x.title || "") + '</div>' +
+          '<div style="font-size:9.5px;color:#94a3b8;word-break:break-all">scope: ' + esc(x.scope || "") + ' · uses: ' + esc((x.allowedUses || []).join(",")) + '</div>' +
+          '<div style="font-size:9.5px;color:#94a3b8;word-break:break-all">source: ' + esc(x.source || "") + '</div>');
+      });
+      return;
+    }
     if (t.closest("[data-case-action]")) {
       var ca = t.getAttribute("data-case-action");
       if (ca === "create_plan") { var fan = $("btnFanout"); if (fan) fan.click(); return; }
+      if (ca === "inspect_gaps") {
+        fetch(API + "/api/case/view?case=" + encodeURIComponent(CASE_ID)).then(function (r) { return r.json(); }).then(function (v) {
+          var items = (((v || {}).quality || {}).gaps || {}).items || [];
+          var h = items.length ? items.map(function (x) {
+            var c = x.status === "waived" ? "#b45309" : (x.status === "answered" ? "#059669" : "#dc2626");
+            return '<div style="padding:5px 0;border-bottom:1px dashed #eef2f7;font-size:10px"><b>' + esc(x.id) + '</b> <span style="color:' + c + '">' + esc(x.status) + '</span> · ' + esc(x.title || "") +
+              '<div style="color:#94a3b8;font-size:9px">' + (x.total ? ("补齐 " + x.provided + "/" + x.total) : "") + (x.reason ? (' · ' + esc(String(x.reason).slice(0, 120))) : '') + '</div></div>';
+          }).join("") : '<div class="empty">暂无数据缺口</div>';
+          showInfoDetail("数据缺口明细", h);
+        });
+        return;
+      }
       if (ca === "approve_plan" || ca === "fill_data") {
         pendingOpen = true; livePoll();
         try { var pb0 = $("pendingBox"); if (pb0) pb0.scrollIntoView({ behavior: "smooth", block: "center" }); } catch (e) {}

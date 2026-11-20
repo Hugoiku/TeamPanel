@@ -198,7 +198,13 @@ function buildCaseView(opts) {
     gaps: {
       open: (opts.needs || []).filter(n => n.status === "pending").length,
       partial: (opts.needs || []).filter(n => n.status === "partial").length,
-      waived: (opts.needs || []).filter(n => n.status === "waived").length
+      waived: (opts.needs || []).filter(n => n.status === "waived").length,
+      items: (opts.needs || []).map(n => ({
+        id: n.id, title: n.title || "", status: n.status || "",
+        kind: n.kind || "", blocking: n.blocking !== false,
+        provided: n.providedCount || 0, total: n.totalCount || 0,
+        reason: n.waiveReason || n.answer || ""
+      })).slice(-50)
     },
     report: { exists: report.exists, audit: report.audit, legal: report.legal, signed: report.signed }
   };
@@ -208,4 +214,28 @@ function buildCaseView(opts) {
     updatedAt: new Date().toISOString() };
 }
 
-module.exports = { buildCaseView, evidenceSummary, claimSummary, briefSummary, reportSummary, derivePhase, PHASE_LABEL };
+function knowledgeView(caseId, root) {
+  const dir = path.join(root || ROOT, "vault", caseId);
+  const ev = evidenceSummary(dir);
+  const raw = readJsonl(path.join(dir, "evidence", "sources.jsonl"));
+  const byId = {};
+  raw.forEach(x => { byId[String(x.id || "")] = x; });
+  const entries = ev.items.map(x => {
+    const r = byId[x.id] || {};
+    const verified = x.status === "verified";
+    return { id: x.id, type: "evidence", title: x.field || "", value: String(r.value || "").slice(0, 500),
+      source: r.url || (r.raw ? "local-cache" : ""), dataAsOf: r.fetched_at || "", status: x.status,
+      scope: "case_only", sensitivity: "internal", license: "existing_source",
+      allowedUses: verified ? ["analysis", "report_citation"] : ["analysis"],
+      evidenceIds: [x.id] };
+  });
+  const cl = claimSummary(dir);
+  cl.items.forEach(x => entries.push({ id: x.id, type: "claim", title: x.text,
+    value: x.text, source: (x.refs || []).join(","), dataAsOf: "", status: x.mapped ? "mapped" : "unmapped",
+    scope: "case_only", sensitivity: "internal", license: "existing_source",
+    allowedUses: x.mapped ? ["analysis", "report_citation"] : ["analysis"], evidenceIds: x.refs || [] }));
+  return { ok: true, case: caseId, entries, counts: { total: entries.length,
+    verified: entries.filter(x => x.status === "verified").length,
+    claimMapped: entries.filter(x => x.type === "claim" && x.status === "mapped").length } };
+}
+module.exports = { buildCaseView, evidenceSummary, claimSummary, briefSummary, reportSummary, derivePhase, knowledgeView, PHASE_LABEL };
