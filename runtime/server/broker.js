@@ -6795,9 +6795,10 @@ function reportConsistency(caseId) {
       let signVersion = f.version || 1;
       if (/final/i.test(rel)) {
         const list = reviews.get(caseId) || [];
-        // 文件状态在 broker 重启后可能尚未加载版本，按报告文件/记录回退到 v1。
-        let curVer = f.version || 0;
-        if (!curVer) { try { curVer = JSON.parse(fs.readFileSync(vaultPath(caseId, "reports/final-manifest.json"), "utf8")).version || 1; } catch (e) { curVer = 1; } }
+        // manifest 是最终报告的版本真相源；fileOf 在脚本直接写文件后可能仍是旧版本。
+        let curVer = 0;
+        try { curVer = JSON.parse(fs.readFileSync(vaultPath(caseId, "reports/final-manifest.json"), "utf8")).version || 0; } catch (e) {}
+        curVer = curVer || f.version || 1;
         signVersion = curVer;
         const blockers = ["audit", "legal"].map(service => {
           const r = list.filter(x => x.service === service && x.path === rel && x.version === curVer)
