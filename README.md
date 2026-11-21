@@ -8,9 +8,9 @@
 > 它把研究拆成计划、任务、证据、复核、签发、校验，  
 > 让模型在边界内做判断，让系统在边界外做交付。
 
-![一条可签发的投研交付链](docs/assets/workflow.png)
+![从聊天记录到可签发的报告](docs/assets/hero.jpg)
 
-*从 Case 到 Verify：每一步都有状态、产物和边界。*
+*视觉示意：左侧是不可验证的 AI 研报，右侧是可签发、可追溯、可恢复的投研交付链。*
 
 ## 它解决什么问题
 
@@ -76,7 +76,9 @@ URL
 
 报告里的数字可以回到证据，而不是回到一句“据公开资料”。
 
-![证据链](docs/assets/evidence-chain.png)
+![证据链](docs/assets/evidence.jpg)
+
+*视觉示意：报告数字 → S# → 快照 → sha256 → manifest → verify。*
 
 ### 3. 失败可恢复，不是卡住重开
 
@@ -202,17 +204,9 @@ DeepSeek Harness（dsh CLI）
 
 ## 架构
 
-~~~mermaid
-flowchart LR
-  A[Case] --> B[Plan]
-  B --> C[WorkItem]
-  C --> D[Employee Loop]
-  D --> E[Gate]
-  E --> F[Evidence]
-  F --> G[Report]
-  G --> H[Sign]
-  H --> I[Verify]
-~~~
+![三层边界：Panel / Broker / Employee](docs/assets/architecture.jpg)
+
+*视觉示意：上面看状态，中间守边界，下面做研究。*
 
 运行时由三部分组成：
 
