@@ -2,6 +2,8 @@
 
 本文只讲"怎么在另一台电脑上把它跑起来、自己配模型"。设计原理见 [DESIGN.md](DESIGN.md) 与 M1–M8。
 
+> 想让 DeepSeek Harness Agent 自动完成部署，见 [AGENT-DEPLOY.md](AGENT-DEPLOY.md)。
+
 ## 1. 三种独立程度（先看清楚再动手）
 
 | 级别 | 需要什么 | 能做到什么 |
